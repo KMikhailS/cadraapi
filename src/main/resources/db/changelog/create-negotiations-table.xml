@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="create-negotiations-table" author="mkrivoshchapov">
+        <createTable tableName="negotiations">
+            <column name="id" type="BIGINT(16)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="total_responses" type="INTEGER(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="successful_responses" type="INTEGER(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failed_responses" type="INTEGER(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="invitations_count" type="INTEGER(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createSequence sequenceName="cdr_negotiations"/>
+    </changeSet>
+
+</databaseChangeLog>

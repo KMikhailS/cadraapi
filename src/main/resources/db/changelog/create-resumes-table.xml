@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="create-resumes-table" author="mkrivoshchapov">
+        <createTable tableName="resumes">
+            <column name="id" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="pdf_link" type="CLOB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="negotiation_id" type="BIGINT(32)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="resumes"
+                baseColumnNames="user_id"
+                constraintName="fk_resumes_user"
+                referencedTableName="users_info"
+                referencedColumnNames="id"
+                onDelete="CASCADE"
+                onUpdate="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="resumes"
+                baseColumnNames="negotiation_id"
+                constraintName="fk_resumes_negotiation"
+                referencedTableName="negotiations"
+                referencedColumnNames="id"
+                onDelete="SET NULL"
+                onUpdate="CASCADE"/>
+
+        <addUniqueConstraint
+                tableName="resumes"
+                columnNames="negotiation_id"
+                constraintName="uk_resumes_negotiation_id"/>
+
+        <createSequence sequenceName="cdr_resumes"/>
+    </changeSet>
+
+</databaseChangeLog>

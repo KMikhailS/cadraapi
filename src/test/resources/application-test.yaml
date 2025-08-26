@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: cadra
+  main:
+    allow-bean-definition-overriding: true
+  security:
+    oauth2:
+      client:
+        registration:
+          hh:
+            client-id: test
+            client-secret: test
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:8080/auth/code
+            client-name: HH
+        provider:
+          hh:
+            authorization-uri: http://localhost/auth
+
+server:
+  port: 8080
+
+hh:
+  api:
+    base-url: http://localhost:8080
