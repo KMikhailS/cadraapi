@@ -9,5 +9,6 @@
     <include file="changelog/create-negotiations-table.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create-users-table.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create-resumes-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-selected-tariffs-table.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

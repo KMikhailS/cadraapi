@@ -34,10 +34,7 @@ public class SwaggerConfig {
                 .servers(List.of(
                         new Server()
                                 .url("http://localhost:" + serverPort)
-                                .description("Local development server"),
-                        new Server()
-                                .url("https://api.cadra.ru")
-                                .description("Production server")
+                                .description("Local development server")
                 ));
     }
 }

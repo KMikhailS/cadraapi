@@ -4,18 +4,20 @@ import feign.RequestInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.brobrocode.cadra.client.wrapper.UserInfoHolder;
-import ru.brobrocode.cadra.service.CustomAccessTokenProvider;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import ru.brobrocode.cadra.client.wrapper.AccessTokenHolder;
 
 @Configuration
 @RequiredArgsConstructor
 public class FeignConfig {
 
-	private final CustomAccessTokenProvider tokenProvider;
-	private final UserInfoHolder userInfoHolder;
+//	private final CustomAccessTokenProvider tokenProvider;
+//	private final UserInfoHolder userInfoHolder;
+	private final AccessTokenHolder accessTokenHolder;
+	private final OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
 
     @Bean
-    public AuthorizationInterceptor requestInterceptor() {
-        return new AuthorizationInterceptor(tokenProvider, userInfoHolder);
+    public OAuth2FeignRequestInterceptor requestInterceptor() {
+        return new OAuth2FeignRequestInterceptor(oAuth2AuthorizedClientManager);
     }
 }

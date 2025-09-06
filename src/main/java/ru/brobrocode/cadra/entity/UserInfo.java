@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -20,17 +19,16 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"resumes", "tariff"})
-@EqualsAndHashCode(exclude = {"resumes", "tariff"})
+@ToString(exclude = {"resumes"})
+@EqualsAndHashCode(exclude = {"resumes"})
 public class UserInfo {
 
 	@Id
-	@UuidGenerator
-	@Column(name = "id", length = 32, nullable = false, updatable = false)
+	@Column(name = "id", nullable = false, updatable = false)
 	private String id;
 
-	@Column(name = "phone_number")
-	private String phoneNumber;
+	@Column(name = "phone")
+	private String phone;
 
 	@Column(name = "email")
 	private String email;
@@ -47,19 +45,6 @@ public class UserInfo {
 	@Column(name = "role", length = 100)
 	private String role;
 
-	@Column(name = "auth_code")
-	private String authCode;
-
-	@Column(name = "access_token")
-	private String accessToken;
-
-	@Column(name = "refresh_token")
-	private String refreshToken;
-
-	@Column(name = "expires_at")
-	@CreatedDate
-	private LocalDateTime expiresAt;
-
 	@Column(name = "created_at", nullable = false)
 	@CreatedDate
 	private LocalDateTime createdAt = LocalDateTime.now();
@@ -68,12 +53,9 @@ public class UserInfo {
 	@LastModifiedDate
 	private LocalDateTime updatedAt = LocalDateTime.now();
 
-	// Many-to-one relationship with Tariff
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "tariff_id", foreignKey = @ForeignKey(name = "fk_users_tariff"))
-	private Tariff tariff;
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private List<SelectedTariff> selectedTariff;
 
-	// One-to-many relationship with Resume
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<Resume> resumes;
 }

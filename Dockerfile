@@ -11,7 +11,7 @@ COPY gradle ./gradle
 COPY src ./src
 
 # Собираем приложение
-RUN gradle clean build -x test --no-daemon
+RUN gradle clean build --no-daemon --no-watch-fs
 
 # Финальный образ
 FROM openjdk:21-jdk-slim

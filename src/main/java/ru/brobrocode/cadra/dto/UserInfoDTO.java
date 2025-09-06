@@ -4,21 +4,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 public class UserInfoDTO {
 	private String id;
+	private String phone;
+	private String email;
 	private String firstName;
 	private String lastName;
 	private String middleName;
-	private String phoneNumber;
-	private String authCode;
-	private String accessToken;
-	private String refreshToken;
-	private String role;
-	private Long tariffId;
-	private LocalDateTime expiresAt;
+	private SelectedTariffDTO selectedTariff;
+	private List<ResumeDTO> resumes;
 }

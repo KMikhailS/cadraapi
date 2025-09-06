@@ -1,18 +1,15 @@
 package ru.brobrocode.cadra.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.ToString;
-import lombok.EqualsAndHashCode;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "tariffs")
@@ -20,8 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "users")
-@EqualsAndHashCode(exclude = "users")
 public class Tariff {
 
 	@Id
@@ -49,8 +44,4 @@ public class Tariff {
 	@Column(name = "updated_at")
 	@LastModifiedDate
 	private LocalDateTime updatedAt = LocalDateTime.now();
-
-	// One-to-many relationship with UserInfo
-	@OneToMany(mappedBy = "tariff", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	private List<UserInfo> users;
 }

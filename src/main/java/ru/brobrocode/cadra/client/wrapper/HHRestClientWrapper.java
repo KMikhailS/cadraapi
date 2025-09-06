@@ -21,9 +21,9 @@ public class HHRestClientWrapper {
 	private final MeApi meApi;
 	private final ResumesApi resumesApi;
 
-	public MeProfile getCurrentUser(String userId) {
-		log.info("Get current user {}", userId);
-		userInfoHolder.setUserInfo(userId);
+	public MeProfile getCurrentUser() {
+//		log.info("Get current user {}", userId);
+//		userInfoHolder.setUserInfo(userId);
 		try {
 			ResponseEntity<MeProfile> response = meApi.getCurrentUserInfo(
 					DEFAULT_USER_AGENT,
@@ -39,14 +39,12 @@ public class HHRestClientWrapper {
 		} catch (Exception e) {
 			log.error("Error getting current user information", e);
 			throw new RuntimeException("Failed to retrieve user information from hh.ru", e);
-		} finally {
-			userInfoHolder.resetUserInfo();
 		}
 	}
 
-	public ResumesMineResponse getMineResumes(String userId) {
-		log.info("Get current user {}", userId);
-		userInfoHolder.setUserInfo(userId);
+	public ResumesMineResponse getMineResumes() {
+//		log.info("Get current user {}", userId);
+//		userInfoHolder.setUserInfo(userId);
 		try {
 			ResponseEntity<ResumesMineResponse> response = resumesApi.getMineResumes(
 					DEFAULT_USER_AGENT,
@@ -60,8 +58,6 @@ public class HHRestClientWrapper {
 		} catch (Exception e) {
 			log.error("Error getting current user information", e);
 			throw new RuntimeException("Failed to retrieve user information from hh.ru", e);
-		} finally {
-			userInfoHolder.resetUserInfo();
 		}
 	}
 

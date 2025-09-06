@@ -4,6 +4,22 @@ server:
 spring:
   application:
     name: cadra
+  security:
+    oauth2:
+      client:
+        registration:
+          hh:
+            client-id: ${CLIENT_ID:11111}
+            client-secret: ${CLIENT_SECRET:1111}
+            authorization-grant-type: authorization_code
+            redirect-uri: ${REDIRECT_URI:http://localhost:8080/login/oauth2/code/hh}
+            client-name: HeadHunter
+        provider:
+          hh:
+            authorization-uri: ${AUTHORIZATION_URI:http://localhost:9000/oauth/authorize}
+            token-uri: https://api.hh.ru/token
+            user-info-uri: https://api.hh.ru/me
+            user-name-attribute: id
   main:
     allow-bean-definition-overriding: true
   datasource:
@@ -41,6 +57,14 @@ springdoc:
   show-actuator: false
 
 cadra:
-  client-id: ${CLIENT_ID}
-  client-secret: ${CLIENT_SECRET}
-  redirect-uri: ${REDIRECT_URI}
+  client-id: ${CLIENT_ID:1111}
+  client-secret: ${CLIENT_SECRET:1111}
+  redirect-uri: ${CADRA_REDIRECT_URI:https://cadra.online/api/login/oauth2/code/hh/test}
+  dashboard-redirect-uri: ${DASHBOARD_REDIRECT_URI:https://cadra.online/oauth-callback}
+
+jwt:
+  secret: ${JWT_SECRET:11111}
+  access-token:
+    expiration: 900000
+  refresh-token:
+    expiration: 604800000

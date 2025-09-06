@@ -15,7 +15,6 @@ public interface TariffMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "users", ignore = true)
     Tariff toEntity(TariffRequest request);
 
     TariffResponse toResponse(Tariff tariff);
@@ -25,6 +24,5 @@ public interface TariffMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "users", ignore = true)
     void updateEntity(@MappingTarget Tariff tariff, TariffRequest request);
 }

@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 public class UserInfoRequest {
 	private String firstName;
 	private String phoneNumber;
-	private String authCode;
 	private String accessToken;
 	private String refreshToken;
 	private LocalDateTime expiresAt;

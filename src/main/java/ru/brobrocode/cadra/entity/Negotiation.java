@@ -49,6 +49,6 @@ public class Negotiation {
 	private LocalDateTime updatedAt = LocalDateTime.now();
 
 	// One-to-one relationship with Resume
-	@OneToOne(mappedBy = "negotiation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToOne(mappedBy = "negotiation", cascade = CascadeType.ALL)
 	private Resume resume;
 }

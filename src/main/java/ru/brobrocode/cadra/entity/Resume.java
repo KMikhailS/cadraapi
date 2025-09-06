@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class Resume {
 
 	@Id
-	@Column(name = "id", nullable = false)
+	@Column(name = "id", nullable = false, updatable = false)
 	private String id;
 
 	@Column(name = "title", length = 500)
