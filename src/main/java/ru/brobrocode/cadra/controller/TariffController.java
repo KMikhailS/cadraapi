@@ -18,7 +18,7 @@ import ru.brobrocode.cadra.service.TariffService;
 import java.util.List;
 
 @RestController
-@RequestMapping("admin/tariffs")
+@RequestMapping("tariffs")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Tariff Controller", description = "Operations related to tariff management")
@@ -134,46 +134,46 @@ public class TariffController {
         return ResponseEntity.ok(updatedTariff);
     }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete tariff", description = "Delete a tariff by its ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Successfully deleted tariff"),
-            @ApiResponse(responseCode = "404", description = "Tariff not found"),
-            @ApiResponse(responseCode = "409", description = "Cannot delete tariff as it is referenced by other entities"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<Void> deleteTariff(
-            @Parameter(description = "Tariff ID", required = true) @PathVariable Long id) {
-        log.debug("DELETE /api/tariffs/{} - Deleting tariff", id);
-        tariffService.deleteTariff(id);
-        return ResponseEntity.noContent().build();
-    }
+//    @DeleteMapping("/{id}")
+//    @Operation(summary = "Delete tariff", description = "Delete a tariff by its ID")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "204", description = "Successfully deleted tariff"),
+//            @ApiResponse(responseCode = "404", description = "Tariff not found"),
+//            @ApiResponse(responseCode = "409", description = "Cannot delete tariff as it is referenced by other entities"),
+//            @ApiResponse(responseCode = "500", description = "Internal server error")
+//    })
+//    public ResponseEntity<Void> deleteTariff(
+//            @Parameter(description = "Tariff ID", required = true) @PathVariable Long id) {
+//        log.debug("DELETE /api/tariffs/{} - Deleting tariff", id);
+//        tariffService.deleteTariff(id);
+//        return ResponseEntity.noContent().build();
+//    }
 
-    @PatchMapping("/{id}/deactivate")
-    @Operation(summary = "Deactivate tariff", description = "Deactivate a tariff by setting isActive to false")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully deactivated tariff"),
-            @ApiResponse(responseCode = "404", description = "Tariff not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<TariffResponse> deactivateTariff(
-            @Parameter(description = "Tariff ID", required = true) @PathVariable Long id) {
-        log.debug("PATCH /api/tariffs/{}/deactivate - Deactivating tariff", id);
-        TariffResponse deactivatedTariff = tariffService.deactivateTariff(id);
-        return ResponseEntity.ok(deactivatedTariff);
-    }
-
-    @PatchMapping("/{id}/activate")
-    @Operation(summary = "Activate tariff", description = "Activate a tariff by setting isActive to true")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully activated tariff"),
-            @ApiResponse(responseCode = "404", description = "Tariff not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<TariffResponse> activateTariff(
-            @Parameter(description = "Tariff ID", required = true) @PathVariable Long id) {
-        log.debug("PATCH /api/tariffs/{}/activate - Activating tariff", id);
-        TariffResponse activatedTariff = tariffService.activateTariff(id);
-        return ResponseEntity.ok(activatedTariff);
-    }
+//    @PatchMapping("/{id}/deactivate")
+//    @Operation(summary = "Deactivate tariff", description = "Deactivate a tariff by setting isActive to false")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Successfully deactivated tariff"),
+//            @ApiResponse(responseCode = "404", description = "Tariff not found"),
+//            @ApiResponse(responseCode = "500", description = "Internal server error")
+//    })
+//    public ResponseEntity<TariffResponse> deactivateTariff(
+//            @Parameter(description = "Tariff ID", required = true) @PathVariable Long id) {
+//        log.debug("PATCH /api/tariffs/{}/deactivate - Deactivating tariff", id);
+//        TariffResponse deactivatedTariff = tariffService.deactivateTariff(id);
+//        return ResponseEntity.ok(deactivatedTariff);
+//    }
+//
+//    @PatchMapping("/{id}/activate")
+//    @Operation(summary = "Activate tariff", description = "Activate a tariff by setting isActive to true")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Successfully activated tariff"),
+//            @ApiResponse(responseCode = "404", description = "Tariff not found"),
+//            @ApiResponse(responseCode = "500", description = "Internal server error")
+//    })
+//    public ResponseEntity<TariffResponse> activateTariff(
+//            @Parameter(description = "Tariff ID", required = true) @PathVariable Long id) {
+//        log.debug("PATCH /api/tariffs/{}/activate - Activating tariff", id);
+//        TariffResponse activatedTariff = tariffService.activateTariff(id);
+//        return ResponseEntity.ok(activatedTariff);
+//    }
 }

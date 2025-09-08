@@ -52,6 +52,14 @@ public class UserService {
 		return userInfoDTO;
 	}
 
+	public UserInfoDTO getResumeInfo() {
+		UserInfoDTO userInfoDTO = new UserInfoDTO();
+		List<ResumeDTO> resumes = getResumes();
+		userInfoDTO.setResumes(resumes);
+
+		return userInfoDTO;
+	}
+
 	private List<ResumeDTO> getResumes() {
 		List<ResumesMineItem> mineResumes = getMineResumes();
 		List<ResumeDTO> resumes = new ArrayList<>();

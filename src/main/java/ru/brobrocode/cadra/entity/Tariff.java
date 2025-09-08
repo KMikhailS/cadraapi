@@ -34,6 +34,15 @@ public class Tariff {
 	@Column(name = "max_responses")
 	private Integer maxResponses;
 
+	@Column(name = "color")
+	private String color;
+
+	@Column(name = "description")
+	private String description;
+
+	@Column(name = "features")
+	private String features;
+
 	@Column(name = "is_active")
 	private Boolean isActive;
 

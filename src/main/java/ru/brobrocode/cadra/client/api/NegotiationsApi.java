@@ -524,8 +524,8 @@ public interface NegotiationsApi {
     
     ResponseEntity<NegotiationsListResponse> getNegotiations(
         @NotNull @Parameter(name = "HH-User-Agent", description = "Название приложения и контактная почта разработчика (см. [Информация о клиенте](#section/Obshaya-informaciya/Trebovaniya-k-zaprosam)) ", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "HH-User-Agent", required = true) String hhUserAgent,
-        @Parameter(name = "page", description = "Номер страницы", in = ParameterIn.QUERY) @Valid @RequestParam(value = "page", required = false, defaultValue = "0") BigDecimal page,
-        @Parameter(name = "per_page", description = "Количество элементов на странице", in = ParameterIn.QUERY) @Valid @RequestParam(value = "per_page", required = false, defaultValue = "20") BigDecimal perPage,
+        @Parameter(name = "page", description = "Номер страницы", in = ParameterIn.QUERY) @Valid @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+        @Parameter(name = "per_page", description = "Количество элементов на странице", in = ParameterIn.QUERY) @Valid @RequestParam(value = "per_page", required = false, defaultValue = "20") int perPage,
         @Parameter(name = "order_by", description = "Тип сортировки. Возможные значения указаны в поле `negotiations_order` [справочника полей](#tag/Obshie-spravochniki/operation/get-dictionaries)", in = ParameterIn.QUERY) @Valid @RequestParam(value = "order_by", required = false) String orderBy,
         @Parameter(name = "order", description = "Направление сортировки. Возможные значения: `asc` — по возрастанию, `desc` — по убыванию", in = ParameterIn.QUERY) @Valid @RequestParam(value = "order", required = false) String order,
         @Parameter(name = "vacancy_id", description = "Фильтр по ID вакансии. Обязательный для работодателя", in = ParameterIn.QUERY) @Valid @RequestParam(value = "vacancy_id", required = false) String vacancyId,

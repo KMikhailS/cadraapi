@@ -27,4 +27,9 @@ public class TariffRequest {
 
     @NotNull(message = "Active status is required")
     private Boolean isActive;
+
+    private String color;
+    private String description;
+    private String features;
+    private String authCode;
 }

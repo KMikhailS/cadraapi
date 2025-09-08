@@ -7,18 +7,18 @@ import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class TariffResponse {
-
     private Long id;
     private String name;
     private BigDecimal price;
     private Integer maxResponses;
-    private Boolean isActive;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String description;
+    private String color;
+    private List<String> features;
 }

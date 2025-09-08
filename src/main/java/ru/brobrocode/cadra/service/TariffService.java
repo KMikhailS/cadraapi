@@ -1,8 +1,10 @@
 package ru.brobrocode.cadra.service;
 
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.brobrocode.cadra.dto.TariffRequest;
@@ -19,6 +21,7 @@ import java.util.List;
 @Slf4j
 @Transactional
 public class TariffService {
+    public static final String AUTH_CODE = "BNV887URD0D26VEUEEEF5M9FC2RP2DN4GNS9";
 
     private final TariffRepository tariffRepository;
     private final TariffMapper tariffMapper;
@@ -68,6 +71,9 @@ public class TariffService {
     }
 
     public TariffResponse createTariff(TariffRequest request) {
+        if (!AUTH_CODE.equals(request.getAuthCode())) {
+            throw new OAuth2AuthenticationException("Access Denied");
+        }
         if (tariffRepository.existsByName(request.getName())) {
             throw new IllegalArgumentException("Tariff with name '" + request.getName() + "' already exists");
         }
@@ -87,6 +93,9 @@ public class TariffService {
 
     public TariffResponse updateTariff(Long id, TariffRequest request) {
         log.debug("Updating tariff with id: {}", id);
+        if (!AUTH_CODE.equals(request.getAuthCode())) {
+            throw new OAuth2AuthenticationException("Access Denied");
+        }
         
         Tariff existingTariff = tariffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));

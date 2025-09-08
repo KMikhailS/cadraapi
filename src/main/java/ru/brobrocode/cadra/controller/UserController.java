@@ -57,6 +57,11 @@ public class UserController {
 		return ResponseEntity.ok().body(userService.getCurrentUser());
 	}
 
+	@GetMapping("/me/resume")
+	public ResponseEntity<UserInfoDTO> getResumeInfo() {
+		return ResponseEntity.ok().body(userService.getResumeInfo());
+	}
+
 	@GetMapping("/resumes/mine")
 	@Operation(
 			summary = "Get current user information",
@@ -81,6 +86,7 @@ public class UserController {
 			}
 	)
 	public ResponseEntity<List<ResumesMineItem>> getMineResumes() {
+
 		return ResponseEntity.ok().body(userService.getMineResumes());
 	}
 }

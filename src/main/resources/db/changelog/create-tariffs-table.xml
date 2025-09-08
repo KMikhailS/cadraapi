@@ -13,6 +13,15 @@
             <column name="name" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
+            <column name="color" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="description" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="features" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
             <column name="price" type="DECIMAL(15,2)">
                 <constraints nullable="true"/>
             </column>

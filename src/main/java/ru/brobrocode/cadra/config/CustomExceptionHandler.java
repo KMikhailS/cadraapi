@@ -1,5 +1,6 @@
 package ru.brobrocode.cadra.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,13 +12,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "ru.brobrocode.cadra")
 @Slf4j
 public class CustomExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
+    public ResponseEntity<String> handleRuntimeException(RuntimeException e, HttpServletRequest request) {
         log.error("Runtime exception occurred", e);
+        if (isSwaggerRequest(request)) {
+            throw e;
+        }
         if (e.getMessage().contains("not found")) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -50,5 +54,12 @@ public class CustomExceptionHandler {
         log.error("Unexpected exception occurred", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("An unexpected error occurred. Please try again later.");
+    }
+
+    private boolean isSwaggerRequest(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.contains("/api-docs") ||
+                path.contains("/swagger-ui") ||
+                path.contains("/v3/api-docs");
     }
 }
