@@ -14,7 +14,9 @@ import ru.brobrocode.cadra.mapper.TariffMapper;
 import ru.brobrocode.cadra.repository.TariffRepository;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +46,9 @@ public class TariffService {
     @Transactional(readOnly = true)
     public List<TariffResponse> getActiveTariffs() {
         log.debug("Getting active tariffs");
-        List<Tariff> tariffs = tariffRepository.findByIsActiveTrue();
+        List<Tariff> tariffs = tariffRepository.findByIsActiveTrue().stream()
+                .sorted(Comparator.comparing(Tariff::getPrice))
+                .collect(Collectors.toList());
         return tariffMapper.toResponseList(tariffs);
     }
 
