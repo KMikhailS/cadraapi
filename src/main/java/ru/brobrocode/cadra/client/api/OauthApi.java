@@ -81,6 +81,18 @@ public interface OauthApi {
         @Parameter(name = "refresh_token", description = "Refresh-токен, полученный ранее при [получении пары токенов](#section/Avtorizaciya/Obnovlenie-pary-access-i-refresh-tokenov) или прошлом обновлении пары") @Valid @RequestParam(value = "refresh_token", required = false) String refreshToken
     );
 
+    @RequestMapping(
+            method = RequestMethod.POST,
+            value = "/token",
+            produces = { "application/json" },
+            consumes = { "application/x-www-form-urlencoded" }
+    )
+
+    ResponseEntity<AuthUserToken> refreshToken(
+            @Parameter(name = "grant_type", description = "Cпособ запроса токена") @Valid @RequestParam(value = "grant_type", required = false) String grantType,
+            @Parameter(name = "refresh_token", description = "Refresh-токен, полученный ранее при [получении пары токенов](#section/Avtorizaciya/Obnovlenie-pary-access-i-refresh-tokenov) или прошлом обновлении пары") @Valid @RequestParam(value = "refresh_token", required = false) String refreshToken
+    );
+
 
     /**
      * DELETE /oauth/token : Инвалидация токена

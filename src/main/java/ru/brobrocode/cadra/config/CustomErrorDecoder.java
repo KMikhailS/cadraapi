@@ -8,6 +8,8 @@ import feign.codec.ErrorDecoder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.brobrocode.cadra.config.dto.ErrorResponse;
+import ru.brobrocode.cadra.config.exception.TokenExpiredException;
+import ru.brobrocode.cadra.service.AuthService;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -17,11 +19,11 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class CustomErrorDecoder implements ErrorDecoder {
 
-	private final TokenService tokenService;
+	private final AuthService authService;
 	private final ObjectMapper objectMapper;
 
-	public CustomErrorDecoder(TokenService tokenService, ObjectMapper objectMapper) {
-		this.tokenService = tokenService;
+	public CustomErrorDecoder(AuthService authService, ObjectMapper objectMapper) {
+		this.authService = authService;
 		this.objectMapper = objectMapper;
 	}
 
@@ -35,16 +37,10 @@ public class CustomErrorDecoder implements ErrorDecoder {
 				if (isTokenExpiredError(errorResponse)) {
 					log.info("Token expired, attempting to refresh for method: {}", methodKey);
 
-					try {
-						tokenService.refreshToken();
-						log.info("Token refreshed successfully");
+					authService.refreshToken();
+					log.info("Token refreshed successfully");
 
-						return new TokenExpiredException("Token expired and refreshed, retry request");
-
-					} catch (Exception e) {
-						log.error("Failed to refresh token", e);
-						return new FeignException.Forbidden("Token refresh failed", response.request(), null, response.headers());
-					}
+					return new TokenExpiredException("Token expired and refreshed, retry request");
 				}
 			} catch (IOException e) {
 				log.error("Error parsing 403 response", e);
@@ -67,3 +63,4 @@ public class CustomErrorDecoder implements ErrorDecoder {
 								.anyMatch(error -> "token_expired".equals(error.getValue()) && "oauth".equals(error.getType())));
 	}
 }
+

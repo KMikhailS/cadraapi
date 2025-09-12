@@ -65,6 +65,6 @@ cadra:
 jwt:
   secret: ${JWT_SECRET:11111}
   access-token:
-    expiration: 900000
+    expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
   refresh-token:
-    expiration: 604800000
+    expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}

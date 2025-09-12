@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.brobrocode.cadra.config.exception.RefreshTokenException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +48,11 @@ public class CustomExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    @ExceptionHandler(RefreshTokenException.class)
+    public ResponseEntity<String> handleRefreshTokenException(Exception e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

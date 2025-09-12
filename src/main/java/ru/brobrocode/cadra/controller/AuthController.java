@@ -2,8 +2,6 @@ package ru.brobrocode.cadra.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import ru.brobrocode.cadra.dto.RefreshTokenRequest;
 import ru.brobrocode.cadra.entity.UserInfo;
@@ -57,7 +55,7 @@ public class AuthController {
 		claims.put("email", user.getEmail());
 		claims.put("firstName", user.getFirstName());
 		claims.put("lastName", user.getLastName());
-		claims.put("registrationId", "hhru");
+		claims.put("registrationId", "hh");
 		claims.put("authorities", List.of("ROLE_USER"));
 
 		// Генерируем новые токены
