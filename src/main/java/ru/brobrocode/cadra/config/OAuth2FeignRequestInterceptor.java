@@ -1,8 +1,10 @@
 package ru.brobrocode.cadra.config;
 
+import feign.Request;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
@@ -10,17 +12,34 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.stereotype.Component;
 
+import java.util.Base64;
+
 @RequiredArgsConstructor
 @Component
 public class OAuth2FeignRequestInterceptor implements RequestInterceptor {
+
+	@Value("${yukassa.shop-id}")
+	private String shopId;
+
+	@Value("${yukassa.secret-key}")
+	private String secretKey;
 
 	private final OAuth2AuthorizedClientManager clientManager;
 
 	@Override
 	public void apply(RequestTemplate template) {
-		String token = getAccessToken();
-		if (token != null) {
-			template.header("Authorization", "Bearer " + token);
+		Request request = template.request();
+		if (request.url().contains("payments")) {
+//			String credentials = "MTE1NzU1OTp0ZXN0XzF4SVZ2RlpFTldpRFVLQm1vMjJHNVF6QjFmblRLbFlfQVhadXFwbEVoRGc=";
+			String credentials = shopId + ":" + secretKey;
+			String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+			template.header("Authorization", "Basic " + base64Credentials);
+			template.header("Content-Type", "application/json");
+		} else {
+			String token = getAccessToken();
+			if (token != null) {
+				template.header("Authorization", "Bearer " + token);
+			}
 		}
 	}
 

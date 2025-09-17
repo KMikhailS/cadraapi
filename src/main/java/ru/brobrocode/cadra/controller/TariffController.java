@@ -64,44 +64,6 @@ public class TariffController {
         return ResponseEntity.ok(tariffs);
     }
 
-    @GetMapping("/inactive")
-    @Operation(summary = "Get inactive tariffs", description = "Retrieve a list of all inactive tariffs")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved inactive tariffs"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<List<TariffResponse>> getInactiveTariffs() {
-        log.debug("GET /api/tariffs/inactive - Getting inactive tariffs");
-        List<TariffResponse> tariffs = tariffService.getInactiveTariffs();
-        return ResponseEntity.ok(tariffs);
-    }
-
-    @GetMapping("/active/sorted-by-price")
-    @Operation(summary = "Get active tariffs sorted by price", description = "Retrieve active tariffs sorted by price in ascending order")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved sorted active tariffs"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<List<TariffResponse>> getActiveTariffsSortedByPrice() {
-        log.debug("GET /api/tariffs/active/sorted-by-price - Getting active tariffs sorted by price");
-        List<TariffResponse> tariffs = tariffService.getActiveTariffsSortedByPrice();
-        return ResponseEntity.ok(tariffs);
-    }
-
-    @GetMapping("/by-name/{name}")
-    @Operation(summary = "Get tariff by name", description = "Retrieve a specific tariff by its name")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved tariff"),
-            @ApiResponse(responseCode = "404", description = "Tariff not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<TariffResponse> getTariffByName(
-            @Parameter(description = "Tariff name", required = true) @PathVariable String name) {
-        log.debug("GET /api/tariffs/by-name/{} - Getting tariff by name", name);
-        TariffResponse tariff = tariffService.getTariffByName(name);
-        return ResponseEntity.ok(tariff);
-    }
-
     @PostMapping
     @Operation(summary = "Create new tariff", description = "Create a new tariff")
     @ApiResponses(value = {
@@ -129,9 +91,44 @@ public class TariffController {
     public ResponseEntity<TariffResponse> updateTariff(
             @Parameter(description = "Tariff ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated tariff data", required = true) @Valid @RequestBody TariffRequest request) {
-        log.debug("PUT /api/tariffs/{} - Updating tariff", id);
         TariffResponse updatedTariff = tariffService.updateTariff(id, request);
         return ResponseEntity.ok(updatedTariff);
+    }
+
+    @GetMapping("/inactive")
+    @Operation(summary = "Get inactive tariffs", description = "Retrieve a list of all inactive tariffs")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved inactive tariffs"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<List<TariffResponse>> getInactiveTariffs() {
+        List<TariffResponse> tariffs = tariffService.getInactiveTariffs();
+        return ResponseEntity.ok(tariffs);
+    }
+
+    @GetMapping("/active/sorted-by-price")
+    @Operation(summary = "Get active tariffs sorted by price", description = "Retrieve active tariffs sorted by price in ascending order")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved sorted active tariffs"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<List<TariffResponse>> getActiveTariffsSortedByPrice() {
+        List<TariffResponse> tariffs = tariffService.getActiveTariffsSortedByPrice();
+        return ResponseEntity.ok(tariffs);
+    }
+
+    @GetMapping("/by-name/{name}")
+    @Operation(summary = "Get tariff by name", description = "Retrieve a specific tariff by its name")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved tariff"),
+            @ApiResponse(responseCode = "404", description = "Tariff not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<TariffResponse> getTariffByName(
+            @Parameter(description = "Tariff name", required = true) @PathVariable String name) {
+        log.debug("GET /api/tariffs/by-name/{} - Getting tariff by name", name);
+        TariffResponse tariff = tariffService.getTariffByName(name);
+        return ResponseEntity.ok(tariff);
     }
 
 //    @DeleteMapping("/{id}")

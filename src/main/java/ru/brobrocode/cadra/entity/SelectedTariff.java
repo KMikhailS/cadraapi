@@ -31,6 +31,9 @@ public class SelectedTariff {
 	@Column(name = "spent_responses")
 	private Integer spentResponses;
 
+	@Column(name = "max_responses")
+	private Integer maxResponses;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
 	private UserInfo user;

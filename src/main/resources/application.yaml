@@ -1,5 +1,5 @@
 server:
-  port: ${SERVIER_PORT:8080}
+  port: ${SERVIER_PORT:8081}
 
 spring:
   application:
@@ -68,3 +68,12 @@ jwt:
     expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
   refresh-token:
     expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+yukassa:
+  shop-id: ${YUKASSA_SHOP_ID:1157559}
+  secret-key: ${YUKASSA_SECRET_KEY:test_1xIVvFZENWiDUKBmo22G5QzB1fnTKlY_AXZuqplEhDg}
+  api-url: ${YUKASSA_SHOP_API_URL:https://api.yookassa.ru}
+  redirect-url: ${YUKASSA_SHOP_REDIRECT_URL:https://cadra.online}
+
+logging.level.ru.brobrocode.cadra.client.yukassa.YuKassaClient: debug
+feign.client.config.default.logger-level: full

@@ -20,5 +20,6 @@ public class TariffResponse {
     private Integer maxResponses;
     private String description;
     private String color;
+    private Long expirationDays;
     private List<String> features;
 }

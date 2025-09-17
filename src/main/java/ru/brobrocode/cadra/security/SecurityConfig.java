@@ -48,6 +48,9 @@ public class SecurityConfig {
 								"/actuator/**",
 								"/webjars/**",
 								"/swagger-resources/**",
+								"/callback/payment",
+								"/payments",
+								"/payments/**",
 								"/tariffs",
 								"/tariffs/**"
 						).permitAll()
@@ -82,6 +85,7 @@ public class SecurityConfig {
 		// Разрешенные origins
 		configuration.setAllowedOrigins(Arrays.asList(
 				"http://localhost:8080",
+				"http://localhost:8081",
 				"http://localhost:5173",
 				"http://localhost:3000",
 				"https://cadra.online"

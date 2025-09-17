@@ -25,4 +25,9 @@ public class VacancyItemDTO {
 	 */
 	private Boolean responseLetterRequired;
 
+	/**
+	 * Информация о наличии прикрепленного тестового задании к вакансии
+	 */
+	private Boolean hasTest;
+
 }

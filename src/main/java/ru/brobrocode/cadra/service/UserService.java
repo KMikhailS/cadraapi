@@ -112,7 +112,7 @@ public class UserService {
 		return Collections.emptyList();
 	}
 
-	private SelectedTariff getSelectedTariff(String userId) {
+	public SelectedTariff getSelectedTariff(String userId) {
 		return selectedTariffRepository.findByUserIdAndIsActive(userId, true).orElse(null);
 	}
 

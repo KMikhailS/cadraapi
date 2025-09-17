@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.brobrocode.cadra.dto.TariffRequest;
 import ru.brobrocode.cadra.dto.TariffResponse;
+import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.Tariff;
+import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.mapper.TariffMapper;
 import ru.brobrocode.cadra.repository.TariffRepository;
 
@@ -38,8 +40,7 @@ public class TariffService {
     @Transactional(readOnly = true)
     public TariffResponse getTariffById(Long id) {
         log.debug("Getting tariff by id: {}", id);
-        Tariff tariff = tariffRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));
+        Tariff tariff = findById(id);
         return tariffMapper.toResponse(tariff);
     }
 
@@ -100,9 +101,8 @@ public class TariffService {
         if (!AUTH_CODE.equals(request.getAuthCode())) {
             throw new OAuth2AuthenticationException("Access Denied");
         }
-        
-        Tariff existingTariff = tariffRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));
+
+        Tariff existingTariff = findById(id);
 
         if (!existingTariff.getName().equals(request.getName()) && 
             tariffRepository.existsByName(request.getName())) {
@@ -124,9 +124,8 @@ public class TariffService {
 
     public void deleteTariff(Long id) {
         log.debug("Deleting tariff with id: {}", id);
-        
-        Tariff tariff = tariffRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));
+
+        Tariff tariff = findById(id);
 
         try {
             tariffRepository.delete(tariff);
@@ -139,9 +138,8 @@ public class TariffService {
 
     public TariffResponse deactivateTariff(Long id) {
         log.debug("Deactivating tariff with id: {}", id);
-        
-        Tariff tariff = tariffRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));
+
+        Tariff tariff = findById(id);
 
         tariff.setIsActive(false);
         tariff.setUpdatedAt(LocalDateTime.now());
@@ -153,9 +151,8 @@ public class TariffService {
 
     public TariffResponse activateTariff(Long id) {
         log.debug("Activating tariff with id: {}", id);
-        
-        Tariff tariff = tariffRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));
+
+        Tariff tariff = findById(id);
 
         tariff.setIsActive(true);
         tariff.setUpdatedAt(LocalDateTime.now());
@@ -163,5 +160,10 @@ public class TariffService {
         Tariff updatedTariff = tariffRepository.save(tariff);
         log.info("Activated tariff with id: {}", updatedTariff.getId());
         return tariffMapper.toResponse(updatedTariff);
+    }
+
+    public Tariff findById(Long id) {
+        return tariffRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));
     }
 }

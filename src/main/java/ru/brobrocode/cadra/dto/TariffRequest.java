@@ -32,4 +32,5 @@ public class TariffRequest {
     private String description;
     private String features;
     private String authCode;
+    private Long expirationDays;
 }

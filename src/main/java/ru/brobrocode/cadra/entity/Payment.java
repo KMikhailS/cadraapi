@@ -12,42 +12,38 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tariffs")
+@Table(name = "payments")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Tariff {
+public class Payment {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tariff_seq")
-	@SequenceGenerator(name = "tariff_seq", sequenceName = "cdr_tariffs", allocationSize = 1)
-	@Column(name = "id")
-	private Long id;
+	@Column(name = "id", nullable = false, updatable = false)
+	private String id;
 
-	@Column(name = "name")
-	private String name;
-
-	@Column(name = "price", precision = 15, scale = 2)
-	private BigDecimal price;
-
-	@Column(name = "max_responses")
-	private Integer maxResponses;
-
-	@Column(name = "color")
-	private String color;
+	@Column(name = "user_id")
+	private String userId;
 
 	@Column(name = "description")
 	private String description;
 
-	@Column(name = "features")
-	private String features;
+	@Column(name = "tariff_id")
+	private Long tariffId;
 
-	@Column(name = "is_active")
-	private Boolean isActive;
+	@Column(name = "amount", precision = 15, scale = 2)
+	private BigDecimal amount;
 
-	@Column(name = "expiration_days")
-	private Long expirationDays;
+	@Column(name = "income_amount", precision = 15, scale = 2)
+	private BigDecimal incomeAmount;
+
+	@Column(name = "payment_method_type")
+	private String paymentMethodType;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false, length = 36)
+	private PaymentStatus status = PaymentStatus.CREATED;
 
 	@Column(name = "created_at", nullable = false)
 	@CreatedDate

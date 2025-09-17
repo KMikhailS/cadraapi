@@ -5,34 +5,31 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-    <changeSet id="create-tariffs-table" author="mkrivoshchapov">
-        <createTable tableName="tariffs">
-            <column name="id" type="BIGINT(16)">
+    <changeSet id="create-payment-table" author="mkrivoshchapov">
+        <createTable tableName="payments">
+            <column name="id" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="name" type="VARCHAR(255)">
+            <column name="user_id" type="VARCHAR(64)">
                 <constraints nullable="true"/>
             </column>
-            <column name="color" type="VARCHAR(255)">
+            <column name="description" type="VARCHAR(1024)">
                 <constraints nullable="true"/>
             </column>
-            <column name="description" type="TEXT">
+            <column name="tariff_id" type="BIGINT">
                 <constraints nullable="true"/>
             </column>
-            <column name="features" type="TEXT">
+            <column name="amount" type="DECIMAL(15,2)">
                 <constraints nullable="true"/>
             </column>
-            <column name="price" type="DECIMAL(15,2)">
+            <column name="income_amount" type="DECIMAL(15,2)">
                 <constraints nullable="true"/>
             </column>
-            <column name="max_responses" type="INTEGER(16)">
+            <column name="payment_method_type" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
-            <column name="expiration_days" type="BIGINT(16)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="is_active" type="BOOLEAN">
-                <constraints nullable="true"/>
+            <column name="status" type="VARCHAR(36)">
+                <constraints nullable="false"/>
             </column>
             <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
@@ -41,8 +38,6 @@
                 <constraints nullable="true"/>
             </column>
         </createTable>
-
-        <createSequence sequenceName="cdr_tariffs"/>
     </changeSet>
 
 </databaseChangeLog>

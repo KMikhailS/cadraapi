@@ -25,6 +25,7 @@ public interface VacancyMapper {
 	@Mapping(target = "type", constant = "vacancy")
 	@Mapping(target = "url", source = "alternateUrl")
 	@Mapping(target = "acceptIncompleteResumes", source = "acceptIncompleteResumes")
+	@Mapping(target = "hasTest", source = "hasTest")
 	@Mapping(target = "archived", source = "archived")
 	@Mapping(target = "responseLetterRequired", source = "responseLetterRequired")
 	VacancyItemDTO toVacancyItemDTO(VacanciesVacanciesItem item);
