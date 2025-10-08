@@ -57,10 +57,10 @@ public class UserController {
 		return ResponseEntity.ok().body(userService.getCurrentUser());
 	}
 
-	@GetMapping("/me/resume")
-	public ResponseEntity<UserInfoDTO> getResumeInfo() {
-		return ResponseEntity.ok().body(userService.getResumeInfo());
-	}
+//	@GetMapping("/me/resume")
+//	public ResponseEntity<UserInfoDTO> getResumeInfo() {
+//		return ResponseEntity.ok().body(userService.getResumeInfo());
+//	}
 
 	@GetMapping("/resumes/mine")
 	@Operation(

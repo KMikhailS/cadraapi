@@ -22,6 +22,7 @@ import ru.brobrocode.cadra.repository.ResumeRepository;
 import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,27 +44,29 @@ public class UserService {
 	private final VacancyService vacancyService;
 
 	public UserInfoDTO getCurrentUser() {
-		MeApplicantProfile userProfile = getUserProfile();
-		SelectedTariff selectedTariff = getSelectedTariff(userProfile.getId());
-		List<ResumeDTO> resumes = getResumes();
-		UserInfoDTO userInfoDTO = userMapper.toUserInfoDTO(userProfile, selectedTariff);
+		UserInfo userInfo = getUserInfo();
+//		MeApplicantProfile userProfile = getUserProfile();
+		SelectedTariff selectedTariff = getSelectedTariff(userInfo.getId());
+		List<ResumeDTO> resumes = getResumes(userInfo);
+		UserInfoDTO userInfoDTO = userMapper.toUserInfoDTO(userInfo, selectedTariff);
 		userInfoDTO.setResumes(resumes);
 
 		return userInfoDTO;
 	}
 
-	public UserInfoDTO getResumeInfo() {
-		UserInfoDTO userInfoDTO = new UserInfoDTO();
-		List<ResumeDTO> resumes = getResumes();
-		userInfoDTO.setResumes(resumes);
+//	public UserInfoDTO getResumeInfo() {
+//		UserInfoDTO userInfoDTO = new UserInfoDTO();
+//		List<ResumeDTO> resumes = getResumes();
+//		userInfoDTO.setResumes(resumes);
+//
+//		return userInfoDTO;
+//	}
 
-		return userInfoDTO;
-	}
-
-	private List<ResumeDTO> getResumes() {
+	private List<ResumeDTO> getResumes(UserInfo userInfo) {
 		List<ResumesMineItem> mineResumes = getMineResumes();
 		List<ResumeDTO> resumes = new ArrayList<>();
 		for (ResumesMineItem mineResume : mineResumes) {
+			saveResume(mineResume, userInfo);
 			ResumeDTO resumeDTO = new ResumeDTO();
 			resumeDTO.setId(mineResume.getId());
 			resumeDTO.setTitle(mineResume.getTitle());
@@ -117,18 +120,30 @@ public class UserService {
 	}
 
 	private void saveResume(ResumesMineItem resumeItem, UserInfo userInfo) {
-		Resume resume = new Resume();
-		resume.setId(resumeItem.getId());
-		resume.setTitle(resumeItem.getTitle());
-		resume.setUser(userInfo);
-		resumeRepository.save(resume);
+		Resume existResume = userInfo.getResumes().stream()
+				.filter(resume -> resumeItem.getId().equals(resume.getId()))
+				.findFirst()
+				.orElse(null);
+		if (existResume == null) {
+			Resume resume = new Resume();
+			resume.setId(resumeItem.getId());
+			resume.setTitle(resumeItem.getTitle());
+			resume.setUser(userInfo);
+			resume.setCreatedAt(LocalDateTime.now());
+			resume.setUpdatedAt(LocalDateTime.now());
+			resumeRepository.save(resume);
+		}
 	}
 
 	private UserInfo getUserInfo() {
-		OAuth2User principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		Map<String, Object> attributes = principal.getAttributes();
-		String userId = (String) attributes.get("id");
-		return findById(userId);
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if (principal instanceof OAuth2User user) {
+			Map<String, Object> attributes = user.getAttributes();
+			String userId = (String) attributes.get("id");
+			return userInfoRepository.findById(userId)
+					.orElseThrow(() -> new IllegalArgumentException("User not found"));
+		}
+		throw new IllegalStateException("User not found");
 	}
 
 	public UserInfo findById(String userId) {

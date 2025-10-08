@@ -32,7 +32,7 @@ public class VacancyProcessingState {
 	@Column(name = "applied_vacancies")
 	private Integer appliedVacancies;
 
-	@Column(name = "applied_date", nullable = false)
+	@Column(name = "applied_date")
 	private LocalDate appliedDate;
 
 	@Column(name = "created_at", nullable = false)

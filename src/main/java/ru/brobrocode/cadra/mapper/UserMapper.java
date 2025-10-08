@@ -25,14 +25,14 @@ public interface UserMapper {
 
 //	List<UserInfoDTO> toUserInfoList(List<UserInfo> users);
 
-	@Mapping(target = "id", source = "userProfile.id")
-	@Mapping(target = "phone", source = "userProfile.phone")
-	@Mapping(target = "email", source = "userProfile.email")
-	@Mapping(target = "firstName", source = "userProfile.firstName")
-	@Mapping(target = "lastName", source = "userProfile.lastName")
-	@Mapping(target = "middleName", source = "userProfile.middleName")
+	@Mapping(target = "id", source = "userInfo.id")
+	@Mapping(target = "phone", source = "userInfo.phone")
+	@Mapping(target = "email", source = "userInfo.email")
+	@Mapping(target = "firstName", source = "userInfo.firstName")
+	@Mapping(target = "lastName", source = "userInfo.lastName")
+	@Mapping(target = "middleName", source = "userInfo.middleName")
 	@Mapping(target = "selectedTariff", source = "selectedTariff")
-	UserInfoDTO toUserInfoDTO(MeApplicantProfile userProfile, SelectedTariff selectedTariff);
+	UserInfoDTO toUserInfoDTO(UserInfo userInfo, SelectedTariff selectedTariff);
 
 	@Mapping(target = "title", source = "tariff.name")
 	@Mapping(target = "maxResponses", source = "selectedTariff.maxResponses")

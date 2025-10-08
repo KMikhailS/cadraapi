@@ -6,11 +6,13 @@ import ru.brobrocode.cadra.entity.VacancyProcessingState;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Repository
 public interface VacancyProcessingStateRepository extends JpaRepository<VacancyProcessingState, String> {
 
-	List<VacancyProcessingState> findAllByResumeIdAndStatusAndAppliedDate(String resumeId, VacancyProcessingState.Status status, LocalDate appliedDate);
+	List<VacancyProcessingState> findAllByResumeIdInAndStatusAndAppliedDate(Collection<String> resumeIds, VacancyProcessingState.Status status, LocalDate appliedDate);
 
 }

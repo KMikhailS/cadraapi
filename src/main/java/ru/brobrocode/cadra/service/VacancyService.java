@@ -14,6 +14,7 @@ import ru.brobrocode.cadra.client.api.ResumesApi;
 import ru.brobrocode.cadra.client.model.VacanciesVacanciesResponse;
 import ru.brobrocode.cadra.config.exception.TariffException;
 import ru.brobrocode.cadra.dto.*;
+import ru.brobrocode.cadra.entity.Resume;
 import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.entity.VacancyProcessingState;
@@ -103,11 +104,11 @@ public class VacancyService {
 		}
 	}
 
-	private Integer getResponsesCount(SelectedTariff selectedTariff, String resumeId) {
+	private Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
 		Integer maxResponses = selectedTariff.getMaxResponses();
 		Integer spentResponses = selectedTariff.getSpentResponses();
 		Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
-		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(resumeId);
+		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
 		int remainResponses = maxResponses - spentResponses;
 		if (remainResponses > maxResponsesPerDay) {
 			return maxResponsesPerDay - appliedVacanciesForToday;
@@ -115,21 +116,29 @@ public class VacancyService {
 		return remainResponses - appliedVacanciesForToday;
 	}
 
-	private Integer getAppliedVacanciesForToday(String resumeId) {
+	private Integer getAppliedVacanciesForToday(UserInfo userInfo) {
 		LocalDate now = LocalDate.now();
-		return vacancyProcessingStateRepository
-				.findAllByResumeIdAndStatusAndAppliedDate(resumeId, VacancyProcessingState.Status.COMPLETED, now)
-				.stream()
-				.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
-				.sum();
+		List<Resume> resumes = userInfo.getResumes();
+		if(resumes != null && !resumes.isEmpty()) {
+			List<String> resumeIds = resumes.stream()
+					.map(Resume::getId)
+					.toList();
+			return vacancyProcessingStateRepository
+					.findAllByResumeIdInAndStatusAndAppliedDate(resumeIds, VacancyProcessingState.Status.COMPLETED, now)
+					.stream()
+					.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
+					.sum();
+		}
+		return 0;
 	}
 
 	@Transactional
 	public AvailableVacanciesResponse getAvailableVacancies(String resumeId) {
 		AvailableVacanciesResponse response = new AvailableVacanciesResponse();
-		UserInfo userInfo = getUserInfoWithTariff();
+		UserInfo userInfo = getUserInfoWithTariffAndResumes();
 		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
-		Integer responsesCount = getResponsesCount(selectedTariff, resumeId);
+		Integer responsesCount = getResponsesCount(selectedTariff, userInfo);
+		log.info("Total responses count: {} for resume: {}", responsesCount, resumeId);
 		if (responsesCount <= 0) {
 			response.setVacancyIds(Collections.emptyList());
 			response.setVacanciesCount(0);
@@ -165,15 +174,12 @@ public class VacancyService {
 		vacancyProcessingState.setCreatedAt(LocalDateTime.now());
 		vacancyProcessingState.setUpdatedAt(LocalDateTime.now());
 		vacancyProcessingStateRepository.save(vacancyProcessingState);
-		log.info("VacancyProcessingState saved: {}", vacancyProcessingState.getId());
 
 		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, request.getVacancyIds());
 		applicationEventPublisher.publishEvent(event);
-		log.info("ApplyVacanciesEvent published {}", event);
 
 		ApplyVacanciesResponse applyVacanciesResponse = new ApplyVacanciesResponse();
 		applyVacanciesResponse.setProcessId(processId);
-		log.info("ApplyVacanciesResponse created {}", applyVacanciesResponse);
 
 		return applyVacanciesResponse;
 //		int userNegotiationsCount = getUserNegotiationsCount(selectedTariff);
@@ -266,6 +272,19 @@ public class VacancyService {
 			String userId = (String) attributes.get("id");
 			return userInfoRepository.findByIdWithSelectedTariffs(userId)
 					.orElseThrow(() -> new IllegalArgumentException("User not found"));
+		}
+		throw new IllegalStateException("User not found");
+	}
+
+	private UserInfo getUserInfoWithTariffAndResumes() {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if (principal instanceof OAuth2User user) {
+			Map<String, Object> attributes = user.getAttributes();
+			String userId = (String) attributes.get("id");
+			UserInfo userInfo = userInfoRepository.findByIdWithSelectedTariffs(userId)
+					.orElseThrow(() -> new IllegalArgumentException("User not found"));
+			userInfoRepository.findByIdWithResumes(userId);
+			return userInfo;
 		}
 		throw new IllegalStateException("User not found");
 	}

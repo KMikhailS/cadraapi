@@ -25,4 +25,9 @@ public interface UserInfoRepository extends JpaRepository<UserInfo, Long> {
 		   "LEFT JOIN FETCH st.tariff t " +
 		   "WHERE u.id = :userId AND st.isActive = true")
 	Optional<UserInfo> findByIdWithActiveTariff(@Param("userId") String userId);
+
+	@Query("SELECT DISTINCT u FROM UserInfo u " +
+		   "LEFT JOIN FETCH u.resumes " +
+		   "WHERE u.id = :userId")
+	Optional<UserInfo> findByIdWithResumes(@Param("userId") String userId);
 }
