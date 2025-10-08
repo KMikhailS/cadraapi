@@ -36,10 +36,10 @@ public class YuKassaService {
 	private final PaymentRepository paymentRepository;
 
 	public PaymentResponse createPayment(CreatePaymentRequest createPaymentRequest) {
-		TariffResponse tariff = tariffService.getTariffById(createPaymentRequest.getTariffId());
+		TariffResponse tariff = tariffService.getTariffByName(createPaymentRequest.getTariffName());
 		UserInfo userInfo = getUserInfo();
 		BigDecimal amount = tariff.getPrice();
-		String description = "Оплата пакета " + tariff.getName();
+		String description = "Оплата тарифа " + tariff.getName();
 		Map<String, Object> metaData = new HashMap<>();
 		metaData.put("userId", userInfo.getId());
 		metaData.put("tariffId", tariff.getId());

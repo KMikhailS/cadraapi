@@ -64,10 +64,10 @@ dependencies {
 	annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
 
 	// TEST
-	testImplementation "io.rest-assured:rest-assured:${restAssuredVersion}"
-	testImplementation "javax.servlet:javax.servlet-api:${javaxServletApiVersion}"
-	testImplementation "org.springframework.boot:spring-boot-starter-test"
-	testImplementation "com.h2database:h2:${h2Version}"
+//	testImplementation "io.rest-assured:rest-assured:${restAssuredVersion}"
+//	testImplementation "javax.servlet:javax.servlet-api:${javaxServletApiVersion}"
+//	testImplementation "org.springframework.boot:spring-boot-starter-test"
+//	testImplementation "com.h2database:h2:${h2Version}"
 }
 
 liquibase {

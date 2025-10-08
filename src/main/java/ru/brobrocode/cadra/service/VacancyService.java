@@ -1,7 +1,9 @@
 package ru.brobrocode.cadra.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -14,15 +16,15 @@ import ru.brobrocode.cadra.config.exception.TariffException;
 import ru.brobrocode.cadra.dto.*;
 import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.UserInfo;
+import ru.brobrocode.cadra.entity.VacancyProcessingState;
 import ru.brobrocode.cadra.mapper.VacancyMapper;
 import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
+import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+import java.util.*;
 
 import static ru.brobrocode.cadra.constants.HHApiConstants.*;
 
@@ -36,6 +38,9 @@ public class VacancyService {
 	private final NegotiationsApi negotiationsApi;
 	private final UserInfoRepository userInfoRepository;
 	private final SelectedTariffRepository selectedTariffRepository;
+	private final ApplicationEventPublisher applicationEventPublisher;
+	private final VacancyProcessingStateRepository vacancyProcessingStateRepository;
+	private final ObjectMapper objectMapper;
 
 	public Integer getFoundVacanciesCount(String resumeId) {
 		try {
@@ -67,67 +72,136 @@ public class VacancyService {
 		}
 	}
 
-	public VacanciesDTO getAllVacanciesSimilarToResume(String resumeId) {
+	public VacanciesDTO getAllVacanciesSimilarToResume(String resumeId, Integer responsesCount) {
 		List<VacancyItemDTO> allItems = new ArrayList<>();
 		int page = 0;
 		int perPage = 100;
-		
+
+		int maxItems = responsesCount * 2;
+
 		try {
 			while (true) {
 				VacanciesDTO vacanciesPage = getVacanciesSimilarToResume(resumeId, page, perPage);
-				
 				if (vacanciesPage == null || vacanciesPage.getItems() == null || vacanciesPage.getItems().isEmpty()) {
 					break;
 				}
-				
 				allItems.addAll(vacanciesPage.getItems());
 				page++;
+				if (allItems.size() >= maxItems) {
+					break;
+				}
 			}
-			
+
 			VacanciesDTO result = new VacanciesDTO();
 			result.setItems(allItems);
 			result.setFound(allItems.size());
 			return result;
-			
+
 		} catch (Exception e) {
 			log.error("Error getting all vacancies similar to resume: {}", e.getMessage(), e);
 			throw new RuntimeException("Failed to retrieve all vacancies from hh.ru", e);
 		}
 	}
 
+	private Integer getResponsesCount(SelectedTariff selectedTariff, String resumeId) {
+		Integer maxResponses = selectedTariff.getMaxResponses();
+		Integer spentResponses = selectedTariff.getSpentResponses();
+		Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
+		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(resumeId);
+		int remainResponses = maxResponses - spentResponses;
+		if (remainResponses > maxResponsesPerDay) {
+			return maxResponsesPerDay - appliedVacanciesForToday;
+		}
+		return remainResponses - appliedVacanciesForToday;
+	}
+
+	private Integer getAppliedVacanciesForToday(String resumeId) {
+		LocalDate now = LocalDate.now();
+		return vacancyProcessingStateRepository
+				.findAllByResumeIdAndStatusAndAppliedDate(resumeId, VacancyProcessingState.Status.COMPLETED, now)
+				.stream()
+				.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
+				.sum();
+	}
+
 	@Transactional
-	public void applyToAllVacancies(String resumeId) {
+	public AvailableVacanciesResponse getAvailableVacancies(String resumeId) {
+		AvailableVacanciesResponse response = new AvailableVacanciesResponse();
+		UserInfo userInfo = getUserInfoWithTariff();
+		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
+		Integer responsesCount = getResponsesCount(selectedTariff, resumeId);
+		if (responsesCount <= 0) {
+			response.setVacancyIds(Collections.emptyList());
+			response.setVacanciesCount(0);
+			return response;
+		}
+		Boolean isSendLetter = selectedTariff.getIsSendLetter();
+		VacanciesDTO vacancies = getAllVacanciesSimilarToResume(resumeId, responsesCount);
+		List<String> vacancyIds = new ArrayList<>();
+		if (vacancies != null && vacancies.getItems() != null && !vacancies.getItems().isEmpty()) {
+			vacancyIds = vacancies.getItems().stream()
+					.filter(item -> isAvailableVacancy(item, isSendLetter))
+					.limit(responsesCount)
+					.map(VacancyItemDTO::getId)
+					.toList();
+		}
+		response.setVacancyIds(vacancyIds);
+		response.setVacanciesCount(vacancyIds.size());
+		return response;
+	}
+
+	@Transactional
+	public ApplyVacanciesResponse applyToAllVacancies(String resumeId, AvailableVacanciesRequest request) {
 		UserInfo userInfo = getUserInfoWithTariff();
 		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
 		if (selectedTariff == null) {
 			throw new TariffException("Не найден активный тариф для пользователя " + userInfo.getId());
 		}
-		int userNegotiationsCount = getUserNegotiationsCount(selectedTariff);
-		if (userNegotiationsCount <= 0) {
-			throw new TariffException("Нет доступных откликов");
-		}
-		VacanciesDTO vacancies = getAllVacanciesSimilarToResume(resumeId);
-		int applyVacanciesCount = 0;
-		if (vacancies != null && vacancies.getItems() != null && !vacancies.getItems().isEmpty()) {
-			List<VacancyItemDTO> items = vacancies.getItems().stream()
-					.filter(this::isAvailableVacancy)
-					.toList();
-			for(VacancyItemDTO item : items) {
-				if (applyVacanciesCount > userNegotiationsCount) {
-					break;
-				}
-				VacancyApplicationRequest request = new VacancyApplicationRequest();
-				request.setResumeId(resumeId);
-				request.setVacancyId(item.getId());
-				ApplyVacancyResponse applyVacancyResponse = applyToVacancy(request);
-				if (applyVacancyResponse != null && applyVacancyResponse.isSuccess()) {
-					applyVacanciesCount++;
-				}
-			}
-		}
-		Integer spentResponses = selectedTariff.getSpentResponses();
-		selectedTariff.setSpentResponses(spentResponses + applyVacanciesCount);
-		selectedTariffRepository.save(selectedTariff);
+		VacancyProcessingState vacancyProcessingState = new VacancyProcessingState();
+		String processId = UUID.randomUUID().toString();
+		vacancyProcessingState.setId(processId);
+		vacancyProcessingState.setResumeId(resumeId);
+		vacancyProcessingState.setStatus(VacancyProcessingState.Status.PROCESS);
+		vacancyProcessingState.setCreatedAt(LocalDateTime.now());
+		vacancyProcessingState.setUpdatedAt(LocalDateTime.now());
+		vacancyProcessingStateRepository.save(vacancyProcessingState);
+		log.info("VacancyProcessingState saved: {}", vacancyProcessingState.getId());
+
+		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, request.getVacancyIds());
+		applicationEventPublisher.publishEvent(event);
+		log.info("ApplyVacanciesEvent published {}", event);
+
+		ApplyVacanciesResponse applyVacanciesResponse = new ApplyVacanciesResponse();
+		applyVacanciesResponse.setProcessId(processId);
+		log.info("ApplyVacanciesResponse created {}", applyVacanciesResponse);
+
+		return applyVacanciesResponse;
+//		int userNegotiationsCount = getUserNegotiationsCount(selectedTariff);
+//		if (userNegotiationsCount <= 0) {
+//			throw new TariffException("Нет доступных откликов");
+//		}
+//		VacanciesDTO vacancies = getAllVacanciesSimilarToResume(resumeId);
+//		int applyVacanciesCount = 0;
+//		if (vacancies != null && vacancies.getItems() != null && !vacancies.getItems().isEmpty()) {
+//			List<VacancyItemDTO> items = vacancies.getItems().stream()
+//					.filter(this::isAvailableVacancy)
+//					.toList();
+//			for(VacancyItemDTO item : items) {
+//				if (applyVacanciesCount > userNegotiationsCount) {
+//					break;
+//				}
+//				VacancyApplicationRequest request = new VacancyApplicationRequest();
+//				request.setResumeId(resumeId);
+//				request.setVacancyId(item.getId());
+//				ApplyVacancyResponse applyVacancyResponse = applyToVacancy(request);
+//				if (applyVacancyResponse != null && applyVacancyResponse.isSuccess()) {
+//					applyVacanciesCount++;
+//				}
+//			}
+//		}
+//		Integer spentResponses = selectedTariff.getSpentResponses();
+//		selectedTariff.setSpentResponses(spentResponses + applyVacanciesCount);
+//		selectedTariffRepository.save(selectedTariff);
 	}
 
 	public ApplyVacancyResponse applyToVacancy(VacancyApplicationRequest request) {
@@ -158,15 +232,29 @@ public class VacancyService {
 		return applyVacancyResponse;
 	}
 
+	public ApplyStatusResponse getApplyVacancyStatus(String processId) {
+		ApplyStatusResponse response = new ApplyStatusResponse();
+		VacancyProcessingState vacancyProcessingState = vacancyProcessingStateRepository.findById(processId).orElse(null);
+		if (vacancyProcessingState == null) {
+			response.setProcessId(processId);
+			response.setMessage("Ошибка процесса отправки резюме. Не найден процесс.");
+			response.setStatus(VacancyProcessingState.Status.ERROR);
+			return response;
+		}
+		response.setProcessId(processId);
+		response.setStatus(vacancyProcessingState.getStatus());
+		return response;
+	}
+
 	private String handleErrorResponse() {
 		return null;
 	}
 
-	private boolean isAvailableVacancy(VacancyItemDTO item) {
+	private boolean isAvailableVacancy(VacancyItemDTO item, Boolean isSendLetter) {
 		Boolean hasTest = item.getHasTest();
 		boolean noNeedTest = hasTest == null || !hasTest;
 		Boolean responseLetterRequired = item.getResponseLetterRequired();
-		boolean noNeedResponseLetterRequired = responseLetterRequired == null || !responseLetterRequired;
+		boolean noNeedResponseLetterRequired = isSendLetter || responseLetterRequired == null || !responseLetterRequired;
 
 		return noNeedTest && noNeedResponseLetterRequired;
 	}
@@ -191,11 +279,11 @@ public class VacancyService {
 	}
 
 	private int getUserNegotiationsCount(SelectedTariff selectedTariff) {
-			if (selectedTariff != null) {
-				Integer spentResponses = selectedTariff.getSpentResponses();
-				Integer maxResponses = selectedTariff.getTariff().getMaxResponses();
-				return maxResponses - spentResponses;
-			}
+		if (selectedTariff != null) {
+			Integer spentResponses = selectedTariff.getSpentResponses();
+			Integer maxResponses = selectedTariff.getTariff().getMaxResponses();
+			return maxResponses - spentResponses;
+		}
 		return 0;
 	}
 

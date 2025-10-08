@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @Getter
 public class CreatePaymentRequest {
-	private Long tariffId;
+	private String tariffName;
 }

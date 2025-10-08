@@ -3,13 +3,13 @@ package ru.brobrocode.cadra.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.brobrocode.cadra.dto.ApplyVacancyResponse;
-import ru.brobrocode.cadra.dto.VacanciesDTO;
-import ru.brobrocode.cadra.dto.VacancyApplicationRequest;
+import ru.brobrocode.cadra.dto.*;
 import ru.brobrocode.cadra.service.VacancyService;
 
+@Slf4j
 @RequiredArgsConstructor
 @Tag(name = "Vacancy Operations", description = "APIs for vacancy operations")
 @RestController
@@ -35,7 +35,23 @@ public class VacancyController {
 	}
 
 	@PostMapping("apply/all/{resume_id}")
-	public void applyToAllVacancies(@PathVariable("resume_id") String resumeId) {
-		vacancyService.applyToAllVacancies(resumeId);
+	public ResponseEntity<ApplyVacanciesResponse> applyToAllVacancies(@PathVariable("resume_id") String resumeId, @RequestBody AvailableVacanciesRequest request) {
+		ApplyVacanciesResponse response = vacancyService.applyToAllVacancies(resumeId, request);
+		log.info("ApplyVacanciesResponse: {}", response);
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping("available/{resume_id}")
+	public ResponseEntity<AvailableVacanciesResponse> getAvailableVacancies(@PathVariable("resume_id") String resumeId) {
+		AvailableVacanciesResponse response = vacancyService.getAvailableVacancies(resumeId);
+		log.info("AvailableVacanciesResponse: {}", response);
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping("apply-status/{process_id}")
+	public ResponseEntity<ApplyStatusResponse> getApplyVacancyStatus(@PathVariable("process_id") String processId) {
+		ApplyStatusResponse response = vacancyService.getApplyVacancyStatus(processId);
+		log.info("ApplyStatusResponse: {}", response);
+		return ResponseEntity.ok(response);
 	}
 }

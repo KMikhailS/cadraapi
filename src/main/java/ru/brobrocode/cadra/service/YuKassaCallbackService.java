@@ -99,16 +99,15 @@ public class YuKassaCallbackService {
 				Map<String, Object> metadata = paymentObject.getMetadata();
 				String userId = (String) metadata.get("userId");
 				UserInfo userInfo = userService.findById(userId);
-				Long tariffId = (Long) metadata.get("tariffId");
-				Tariff tariff = tariffService.findById(tariffId);
-				Integer maxResponses = tariff.getMaxResponses();
-				SelectedTariff activeSelectedTariff = userService.getSelectedTariff(userId);
-				if (activeSelectedTariff != null) {
-					maxResponses = maxResponses + activeSelectedTariff.getMaxResponses() - activeSelectedTariff.getSpentResponses();
-					activeSelectedTariff.setIsActive(false);
-					selectedTariffRepository.save(activeSelectedTariff);
+				Object tariffIdValue = metadata.get("tariffId");
+				Long tariffId = null;
+				if (tariffIdValue instanceof String) {
+					tariffId = Long.parseLong((String) tariffIdValue);
+				} else if (tariffIdValue instanceof Long) {
+					tariffId = (Long) metadata.get("tariffId");
 				}
-				saveSelectedTariff(tariff, userInfo, maxResponses);
+				Tariff tariff = tariffService.findById(tariffId);
+				saveSelectedTariff(tariff, userInfo, userId);
 			}
 		} catch (Exception e) {
 			log.error("Error handling successful payment: {}", paymentObject.getId(), e);
@@ -122,7 +121,22 @@ public class YuKassaCallbackService {
 		paymentRepository.save(payment);
 	}
 
-	private void saveSelectedTariff(Tariff tariff, UserInfo userInfo, Integer maxResponses) {
+	private void saveSelectedTariff(Tariff tariff, UserInfo userInfo, String userId) {
+		Integer maxResponses = tariff.getMaxResponses();
+		Integer maxResponsesPerDay = tariff.getMaxResponsesPerDay();
+		Boolean isSendLetter = tariff.getIsSendLetter();
+		SelectedTariff activeSelectedTariff = userService.getSelectedTariff(userId);
+		if (activeSelectedTariff != null) {
+			if (activeSelectedTariff.getMaxResponsesPerDay() > maxResponsesPerDay) {
+				maxResponsesPerDay = activeSelectedTariff.getMaxResponsesPerDay();
+			}
+			if (activeSelectedTariff.getIsSendLetter() != null && activeSelectedTariff.getIsSendLetter()) {
+				isSendLetter = true;
+			}
+			maxResponses = maxResponses + activeSelectedTariff.getMaxResponses() - activeSelectedTariff.getSpentResponses();
+			activeSelectedTariff.setIsActive(false);
+			selectedTariffRepository.save(activeSelectedTariff);
+		}
 		SelectedTariff selectedTariff = new SelectedTariff();
 		selectedTariff.setTariff(tariff);
 		selectedTariff.setUser(userInfo);
@@ -132,6 +146,8 @@ public class YuKassaCallbackService {
 		selectedTariff.setExpiresAt(LocalDate.now().plusDays(tariff.getExpirationDays()));
 		selectedTariff.setCreatedAt(LocalDateTime.now());
 		selectedTariff.setUpdatedAt(LocalDateTime.now());
+		selectedTariff.setMaxResponsesPerDay(maxResponsesPerDay);
+		selectedTariff.setIsSendLetter(isSendLetter);
 		selectedTariffRepository.save(selectedTariff);
 	}
 

@@ -24,6 +24,8 @@ public class TariffRequest {
 
     @Min(value = 0, message = "Max responses must be greater than or equal to 0")
     private Integer maxResponses;
+    private Integer maxResponsesPerDay;
+    private Boolean isSendLetter;
 
     @NotNull(message = "Active status is required")
     private Boolean isActive;

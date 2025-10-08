@@ -35,6 +35,6 @@ public interface UserMapper {
 	UserInfoDTO toUserInfoDTO(MeApplicantProfile userProfile, SelectedTariff selectedTariff);
 
 	@Mapping(target = "title", source = "tariff.name")
-	@Mapping(target = "maxResponses", source = "tariff.maxResponses")
+	@Mapping(target = "maxResponses", source = "selectedTariff.maxResponses")
 	SelectedTariffDTO toSelectedTariffDTO(SelectedTariff selectedTariff);
 }

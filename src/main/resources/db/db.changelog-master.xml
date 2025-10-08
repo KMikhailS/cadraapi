@@ -11,5 +11,6 @@
     <include file="changelog/create-resumes-table.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create-selected-tariffs-table.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create-payment-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-vacancy_processing_state.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

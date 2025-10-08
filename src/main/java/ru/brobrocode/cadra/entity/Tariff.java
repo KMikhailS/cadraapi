@@ -34,6 +34,12 @@ public class Tariff {
 	@Column(name = "max_responses")
 	private Integer maxResponses;
 
+	@Column(name = "max_responses_per_day")
+	private Integer maxResponsesPerDay;
+
+	@Column(name = "is_send_letter")
+	private Boolean isSendLetter;
+
 	@Column(name = "color")
 	private String color;
 
