@@ -13,5 +13,6 @@ import ru.brobrocode.cadra.entity.VacancyProcessingState;
 public class ApplyStatusResponse {
 	private String processId;
 	private String message;
+	private Integer appliedVacancies;
 	private VacancyProcessingState.Status status;
 }

@@ -14,5 +14,6 @@ import java.util.List;
 public class ApplyVacanciesEvent {
 	private final String processId;
 	private final String resumeId;
+	private final Long selectedTariffId;
 	private final List<String> vacancyIds;
 }

@@ -106,14 +106,26 @@ public class VacancyService {
 
 	private Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
 		Integer maxResponses = selectedTariff.getMaxResponses();
+		log.info("RESPONSES COUNT >>>>>>>>> maxResponses count: {}", maxResponses);
 		Integer spentResponses = selectedTariff.getSpentResponses();
+		log.info("RESPONSES COUNT >>>>>>>>> spentResponses count: {}", spentResponses);
 		Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
+		log.info("RESPONSES COUNT >>>>>>>>> maxResponsesPerDay count: {}", maxResponsesPerDay);
 		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
+		log.info("RESPONSES COUNT >>>>>>>>> appliedVacanciesForToday count: {}", appliedVacanciesForToday);
 		int remainResponses = maxResponses - spentResponses;
-		if (remainResponses > maxResponsesPerDay) {
-			return maxResponsesPerDay - appliedVacanciesForToday;
-		}
-		return remainResponses - appliedVacanciesForToday;
+		log.info("RESPONSES COUNT >>>>>>>>> remainResponses count: {}", remainResponses);
+		int availableForToday = maxResponsesPerDay - appliedVacanciesForToday;
+		log.info("RESPONSES COUNT >>>>>>>>> availableForToday count: {}", availableForToday);
+
+		return Math.min(availableForToday, remainResponses);
+
+//		if (remainResponses > maxResponsesPerDay) {
+//			return availableForToday;
+//		} else if (availableForToday < remainResponses) {
+//			return availableForToday;
+//		}
+//		return remainResponses;
 	}
 
 	private Integer getAppliedVacanciesForToday(UserInfo userInfo) {
@@ -138,7 +150,7 @@ public class VacancyService {
 		UserInfo userInfo = getUserInfoWithTariffAndResumes();
 		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
 		Integer responsesCount = getResponsesCount(selectedTariff, userInfo);
-		log.info("Total responses count: {} for resume: {}", responsesCount, resumeId);
+		log.info("RESPONSES COUNT >>>>>>>>> Total responses count: {} for resume: {}", responsesCount, resumeId);
 		if (responsesCount <= 0) {
 			response.setVacancyIds(Collections.emptyList());
 			response.setVacanciesCount(0);
@@ -175,39 +187,13 @@ public class VacancyService {
 		vacancyProcessingState.setUpdatedAt(LocalDateTime.now());
 		vacancyProcessingStateRepository.save(vacancyProcessingState);
 
-		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, request.getVacancyIds());
+		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, selectedTariff.getId(), request.getVacancyIds());
 		applicationEventPublisher.publishEvent(event);
 
 		ApplyVacanciesResponse applyVacanciesResponse = new ApplyVacanciesResponse();
 		applyVacanciesResponse.setProcessId(processId);
 
 		return applyVacanciesResponse;
-//		int userNegotiationsCount = getUserNegotiationsCount(selectedTariff);
-//		if (userNegotiationsCount <= 0) {
-//			throw new TariffException("Нет доступных откликов");
-//		}
-//		VacanciesDTO vacancies = getAllVacanciesSimilarToResume(resumeId);
-//		int applyVacanciesCount = 0;
-//		if (vacancies != null && vacancies.getItems() != null && !vacancies.getItems().isEmpty()) {
-//			List<VacancyItemDTO> items = vacancies.getItems().stream()
-//					.filter(this::isAvailableVacancy)
-//					.toList();
-//			for(VacancyItemDTO item : items) {
-//				if (applyVacanciesCount > userNegotiationsCount) {
-//					break;
-//				}
-//				VacancyApplicationRequest request = new VacancyApplicationRequest();
-//				request.setResumeId(resumeId);
-//				request.setVacancyId(item.getId());
-//				ApplyVacancyResponse applyVacancyResponse = applyToVacancy(request);
-//				if (applyVacancyResponse != null && applyVacancyResponse.isSuccess()) {
-//					applyVacanciesCount++;
-//				}
-//			}
-//		}
-//		Integer spentResponses = selectedTariff.getSpentResponses();
-//		selectedTariff.setSpentResponses(spentResponses + applyVacanciesCount);
-//		selectedTariffRepository.save(selectedTariff);
 	}
 
 	public ApplyVacancyResponse applyToVacancy(VacancyApplicationRequest request) {
@@ -248,6 +234,7 @@ public class VacancyService {
 			return response;
 		}
 		response.setProcessId(processId);
+		response.setAppliedVacancies(vacancyProcessingState.getAppliedVacancies());
 		response.setStatus(vacancyProcessingState.getStatus());
 		return response;
 	}
