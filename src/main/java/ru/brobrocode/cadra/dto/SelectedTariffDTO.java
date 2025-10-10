@@ -14,4 +14,5 @@ public class SelectedTariffDTO {
 	private Boolean isActive;
 	private Integer maxResponses;
 	private Integer spentResponses;
+	private Integer availableVacanciesForToday;
 }

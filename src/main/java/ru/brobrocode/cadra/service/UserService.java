@@ -17,11 +17,14 @@ import ru.brobrocode.cadra.dto.UserInfoDTO;
 import ru.brobrocode.cadra.entity.Resume;
 import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.UserInfo;
+import ru.brobrocode.cadra.entity.VacancyProcessingState;
 import ru.brobrocode.cadra.mapper.UserMapper;
 import ru.brobrocode.cadra.repository.ResumeRepository;
 import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
+import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,26 +45,19 @@ public class UserService {
 	private final SelectedTariffRepository selectedTariffRepository;
 	private final UserMapper userMapper;
 	private final VacancyService vacancyService;
+	private final VacancyProcessingStateRepository vacancyProcessingStateRepository;
 
 	public UserInfoDTO getCurrentUser() {
 		UserInfo userInfo = getUserInfo();
-//		MeApplicantProfile userProfile = getUserProfile();
 		SelectedTariff selectedTariff = getSelectedTariff(userInfo.getId());
 		List<ResumeDTO> resumes = getResumes(userInfo);
 		UserInfoDTO userInfoDTO = userMapper.toUserInfoDTO(userInfo, selectedTariff);
 		userInfoDTO.setResumes(resumes);
+		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
+		userInfoDTO.getSelectedTariff().setAvailableVacanciesForToday(selectedTariff.getMaxResponsesPerDay() - appliedVacanciesForToday);
 
 		return userInfoDTO;
 	}
-
-//	public UserInfoDTO getResumeInfo() {
-//		UserInfoDTO userInfoDTO = new UserInfoDTO();
-//		List<ResumeDTO> resumes = getResumes();
-//		userInfoDTO.setResumes(resumes);
-//
-//		return userInfoDTO;
-//	}
-
 	private List<ResumeDTO> getResumes(UserInfo userInfo) {
 		List<ResumesMineItem> mineResumes = getMineResumes();
 		List<ResumeDTO> resumes = new ArrayList<>();
@@ -75,6 +71,22 @@ public class UserService {
 			resumes.add(resumeDTO);
 		}
 		return resumes;
+	}
+
+	private Integer getAppliedVacanciesForToday(UserInfo userInfo) {
+		LocalDate now = LocalDate.now();
+		List<Resume> resumes = userInfo.getResumes();
+		if(resumes != null && !resumes.isEmpty()) {
+			List<String> resumeIds = resumes.stream()
+					.map(Resume::getId)
+					.toList();
+			return vacancyProcessingStateRepository
+					.findAllByResumeIdInAndStatusAndAppliedDate(resumeIds, VacancyProcessingState.Status.COMPLETED, now)
+					.stream()
+					.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
+					.sum();
+		}
+		return 0;
 	}
 
 	public MeApplicantProfile getUserProfile() {

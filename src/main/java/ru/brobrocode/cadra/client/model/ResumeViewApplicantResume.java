@@ -58,6 +58,9 @@ public class ResumeViewApplicantResume {
 
   private Boolean marked = false;
 
+  @JsonProperty("skill_set")
+  private List<String> skillSet;
+
   private String middleName = null;
 
   private Object platform;
@@ -149,6 +152,10 @@ public class ResumeViewApplicantResume {
   public ResumeViewApplicantResume id(String id) {
     this.id = id;
     return this;
+  }
+
+  public List<String> getSkillSet() {
+    return skillSet;
   }
 
   /**

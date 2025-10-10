@@ -69,6 +69,9 @@ jwt:
   refresh-token:
     expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 
+giga-chat:
+  auth-key: ${GIGA_CHAT_AUTH_KEY}
+
 yukassa:
   shop-id: ${YUKASSA_SHOP_ID:1157559}
   secret-key: ${YUKASSA_SECRET_KEY:test_1xIVvFZENWiDUKBmo22G5QzB1fnTKlY_AXZuqplEhDg}

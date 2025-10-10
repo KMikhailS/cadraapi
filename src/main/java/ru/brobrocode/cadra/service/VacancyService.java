@@ -1,15 +1,17 @@
 package ru.brobrocode.cadra.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.brobrocode.cadra.client.api.NegotiationsApi;
 import ru.brobrocode.cadra.client.api.ResumesApi;
 import ru.brobrocode.cadra.client.model.VacanciesVacanciesResponse;
 import ru.brobrocode.cadra.config.exception.TariffException;
@@ -19,7 +21,6 @@ import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.entity.VacancyProcessingState;
 import ru.brobrocode.cadra.mapper.VacancyMapper;
-import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
 import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
 
@@ -36,12 +37,10 @@ public class VacancyService {
 
 	private final VacancyMapper vacancyMapper;
 	private final ResumesApi resumesApi;
-	private final NegotiationsApi negotiationsApi;
 	private final UserInfoRepository userInfoRepository;
-	private final SelectedTariffRepository selectedTariffRepository;
 	private final ApplicationEventPublisher applicationEventPublisher;
 	private final VacancyProcessingStateRepository vacancyProcessingStateRepository;
-	private final ObjectMapper objectMapper;
+	private final OAuth2AuthorizedClientManager clientManager;
 
 	public Integer getFoundVacanciesCount(String resumeId) {
 		try {
@@ -106,26 +105,13 @@ public class VacancyService {
 
 	private Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
 		Integer maxResponses = selectedTariff.getMaxResponses();
-		log.info("RESPONSES COUNT >>>>>>>>> maxResponses count: {}", maxResponses);
 		Integer spentResponses = selectedTariff.getSpentResponses();
-		log.info("RESPONSES COUNT >>>>>>>>> spentResponses count: {}", spentResponses);
 		Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
-		log.info("RESPONSES COUNT >>>>>>>>> maxResponsesPerDay count: {}", maxResponsesPerDay);
 		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
-		log.info("RESPONSES COUNT >>>>>>>>> appliedVacanciesForToday count: {}", appliedVacanciesForToday);
 		int remainResponses = maxResponses - spentResponses;
-		log.info("RESPONSES COUNT >>>>>>>>> remainResponses count: {}", remainResponses);
 		int availableForToday = maxResponsesPerDay - appliedVacanciesForToday;
-		log.info("RESPONSES COUNT >>>>>>>>> availableForToday count: {}", availableForToday);
 
 		return Math.min(availableForToday, remainResponses);
-
-//		if (remainResponses > maxResponsesPerDay) {
-//			return availableForToday;
-//		} else if (availableForToday < remainResponses) {
-//			return availableForToday;
-//		}
-//		return remainResponses;
 	}
 
 	private Integer getAppliedVacanciesForToday(UserInfo userInfo) {
@@ -150,7 +136,7 @@ public class VacancyService {
 		UserInfo userInfo = getUserInfoWithTariffAndResumes();
 		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
 		Integer responsesCount = getResponsesCount(selectedTariff, userInfo);
-		log.info("RESPONSES COUNT >>>>>>>>> Total responses count: {} for resume: {}", responsesCount, resumeId);
+		log.info("Total responses count: {} for resume: {}", responsesCount, resumeId);
 		if (responsesCount <= 0) {
 			response.setVacancyIds(Collections.emptyList());
 			response.setVacanciesCount(0);
@@ -187,41 +173,15 @@ public class VacancyService {
 		vacancyProcessingState.setUpdatedAt(LocalDateTime.now());
 		vacancyProcessingStateRepository.save(vacancyProcessingState);
 
-		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, selectedTariff.getId(), request.getVacancyIds());
+		String accessToken = getAccessToken();
+		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, userInfo.getPhone(),
+				userInfo.getEmail(), selectedTariff.getId(), request.getVacancyIds(), accessToken);
 		applicationEventPublisher.publishEvent(event);
 
 		ApplyVacanciesResponse applyVacanciesResponse = new ApplyVacanciesResponse();
 		applyVacanciesResponse.setProcessId(processId);
 
 		return applyVacanciesResponse;
-	}
-
-	public ApplyVacancyResponse applyToVacancy(VacancyApplicationRequest request) {
-		ApplyVacancyResponse applyVacancyResponse = new ApplyVacancyResponse();
-		applyVacancyResponse.setVacancyId(request.getVacancyId());
-		try {
-			ResponseEntity<String> response = negotiationsApi.applyToVacancy(
-					DEFAULT_USER_AGENT,
-					request.getResumeId(),
-					request.getVacancyId(),
-					DEFAULT_LOCALE,
-					DEFAULT_HOST,
-					request.getMessage()
-			);
-
-			int statusCode = response.getStatusCode().value();
-
-			if (statusCode == 210) {
-				applyVacancyResponse.setSuccess(true);
-			} else if (statusCode == 400) {
-				applyVacancyResponse.setSuccess(false);
-			}
-
-		} catch (Exception e) {
-			applyVacancyResponse.setSuccess(false);
-			log.error("Error applying to vacancy: {}", e.getMessage(), e);
-		}
-		return applyVacancyResponse;
 	}
 
 	public ApplyStatusResponse getApplyVacancyStatus(String processId) {
@@ -237,10 +197,6 @@ public class VacancyService {
 		response.setAppliedVacancies(vacancyProcessingState.getAppliedVacancies());
 		response.setStatus(vacancyProcessingState.getStatus());
 		return response;
-	}
-
-	private String handleErrorResponse() {
-		return null;
 	}
 
 	private boolean isAvailableVacancy(VacancyItemDTO item, Boolean isSendLetter) {
@@ -284,13 +240,20 @@ public class VacancyService {
 				.orElse(null);
 	}
 
-	private int getUserNegotiationsCount(SelectedTariff selectedTariff) {
-		if (selectedTariff != null) {
-			Integer spentResponses = selectedTariff.getSpentResponses();
-			Integer maxResponses = selectedTariff.getTariff().getMaxResponses();
-			return maxResponses - spentResponses;
+	private String getAccessToken() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication == null) {
+			return null;
 		}
-		return 0;
+		OAuth2AuthorizeRequest request = OAuth2AuthorizeRequest
+				.withClientRegistrationId("hh")
+				.principal(authentication)
+				.build();
+
+		OAuth2AuthorizedClient client = clientManager.authorize(request);
+
+		return client != null ? client.getAccessToken().getTokenValue() : null;
 	}
 
 	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage) {

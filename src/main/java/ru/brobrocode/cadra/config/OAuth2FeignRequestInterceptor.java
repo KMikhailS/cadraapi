@@ -4,6 +4,7 @@ import feign.Request;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,13 +15,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.Base64;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class OAuth2FeignRequestInterceptor implements RequestInterceptor {
 
 	@Value("${yukassa.shop-id}")
 	private String shopId;
-
 	@Value("${yukassa.secret-key}")
 	private String secretKey;
 
@@ -30,7 +31,6 @@ public class OAuth2FeignRequestInterceptor implements RequestInterceptor {
 	public void apply(RequestTemplate template) {
 		Request request = template.request();
 		if (request.url().contains("payments")) {
-//			String credentials = "MTE1NzU1OTp0ZXN0XzF4SVZ2RlpFTldpRFVLQm1vMjJHNVF6QjFmblRLbFlfQVhadXFwbEVoRGc=";
 			String credentials = shopId + ":" + secretKey;
 			String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes());
 			template.header("Authorization", "Basic " + base64Credentials);

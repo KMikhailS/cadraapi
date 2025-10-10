@@ -23,16 +23,16 @@ public class VacancyController {
 		return ResponseEntity.ok().body(vacancyService.getVacanciesSimilarToResume(resumeId, page, perPage));
 	}
 
-	@PostMapping("apply")
-	public ResponseEntity<ApplyVacancyResponse> applyToVacancy(@Valid @RequestBody VacancyApplicationRequest request) {
-		ApplyVacancyResponse response = vacancyService.applyToVacancy(request);
-		
-		if (response.isSuccess()) {
-			return ResponseEntity.ok(response);
-		} else {
-			return ResponseEntity.badRequest().body(response);
-		}
-	}
+//	@PostMapping("apply")
+//	public ResponseEntity<ApplyVacancyResponse> applyToVacancy(@Valid @RequestBody VacancyApplicationRequest request) {
+//		ApplyVacancyResponse response = vacancyService.applyToVacancy(request);
+//
+//		if (response.isSuccess()) {
+//			return ResponseEntity.ok(response);
+//		} else {
+//			return ResponseEntity.badRequest().body(response);
+//		}
+//	}
 
 	@PostMapping("apply/all/{resume_id}")
 	public ResponseEntity<ApplyVacanciesResponse> applyToAllVacancies(@PathVariable("resume_id") String resumeId, @RequestBody AvailableVacanciesRequest request) {

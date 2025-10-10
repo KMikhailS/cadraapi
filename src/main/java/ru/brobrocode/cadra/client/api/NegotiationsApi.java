@@ -5,6 +5,7 @@
  */
 package ru.brobrocode.cadra.client.api;
 
+import feign.Headers;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -81,6 +82,7 @@ public interface NegotiationsApi {
     
     ResponseEntity<String> applyToVacancy(
         @NotNull @Parameter(name = "HH-User-Agent", description = "Название приложения и контактная почта разработчика (см. [Информация о клиенте](#section/Obshaya-informaciya/Trebovaniya-k-zaprosam)) ", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "HH-User-Agent", required = true) String hhUserAgent,
+        @NotNull @Parameter(name = "Authorization", description = "Токен", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "Authorization", required = true) String token,
         @Parameter(name = "resume_id", description = "Идентификатор резюме, которым производится отклик", required = true) @Valid @RequestParam(value = "resume_id", required = true) String resumeId,
         @Parameter(name = "vacancy_id", description = "Идентификатор вакансии, на которую происходит отклик", required = true) @Valid @RequestParam(value = "vacancy_id", required = true) String vacancyId,
         @Parameter(name = "locale", description = "Идентификатор локали (см. [Локализация](#tag/Obshie-spravochniki/operation/get-locales)) ", in = ParameterIn.QUERY) @Valid @RequestParam(value = "locale", required = false, defaultValue = "RU") String locale,

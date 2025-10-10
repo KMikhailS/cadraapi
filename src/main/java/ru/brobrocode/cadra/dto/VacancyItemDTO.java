@@ -30,4 +30,6 @@ public class VacancyItemDTO {
 	 */
 	private Boolean hasTest;
 
+	private String description;
+
 }
