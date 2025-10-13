@@ -99,10 +99,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				// Устанавливаем в SecurityContext
 				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-				log.debug("JWT authentication successful for user: {}", userId);
+				log.info("JWT authentication successful for user: {}", userId);
+			} else {
+				// Токен невалидный - возвращаем 401
+				log.info("Invalid JWT token for request: {}", request.getRequestURI());
+				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				response.setContentType("application/json");
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"JWT token expired or invalid\"}");
+				return;
 			}
 		} catch (Exception e) {
 			log.error("JWT authentication failed", e);
+			// Возвращаем 401 вместо продолжения обработки
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			response.setContentType("application/json");
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"JWT token expired or invalid\"}");
+			return;
 		}
 		filterChain.doFilter(request, response);
 	}

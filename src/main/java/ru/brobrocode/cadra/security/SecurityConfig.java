@@ -1,5 +1,6 @@
 package ru.brobrocode.cadra.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,9 +34,26 @@ public class SecurityConfig {
 		http
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//				.sessionManagement(session -> session
-//						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//				)
+				.sessionManagement(session -> session
+						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+				)
+				.exceptionHandling(exception -> exception
+						.authenticationEntryPoint((request, response, authException) -> {
+							// Для API endpoints возвращаем 401
+							if (request.getRequestURI().startsWith("/api/") ||
+								request.getRequestURI().startsWith("/negotiations") ||
+								request.getRequestURI().startsWith("/vacancies") ||
+								request.getRequestURI().startsWith("/user")) {
+								response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+								response.setContentType("application/json");
+								response.setCharacterEncoding("UTF-8");
+								response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
+							} else {
+								// Для остальных - редирект на OAuth
+								response.sendRedirect("/oauth2/authorization/hh");
+							}
+						})
+				)
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(
 								"/api/auth/**",
