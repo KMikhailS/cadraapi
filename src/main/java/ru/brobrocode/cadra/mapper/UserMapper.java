@@ -9,6 +9,7 @@ import ru.brobrocode.cadra.client.model.MeApplicantProfile;
 import ru.brobrocode.cadra.client.model.ResumesMineItem;
 import ru.brobrocode.cadra.dto.ResumeDTO;
 import ru.brobrocode.cadra.dto.SelectedTariffDTO;
+import ru.brobrocode.cadra.dto.SettingsDTO;
 import ru.brobrocode.cadra.dto.UserInfoDTO;
 import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.UserInfo;
@@ -37,4 +38,6 @@ public interface UserMapper {
 	@Mapping(target = "title", source = "tariff.name")
 	@Mapping(target = "maxResponses", source = "selectedTariff.maxResponses")
 	SelectedTariffDTO toSelectedTariffDTO(SelectedTariff selectedTariff);
+
+	SettingsDTO map(String value);
 }

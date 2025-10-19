@@ -24,6 +24,7 @@ import ru.brobrocode.cadra.mapper.VacancyMapper;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
 import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -42,11 +43,11 @@ public class VacancyService {
 	private final VacancyProcessingStateRepository vacancyProcessingStateRepository;
 	private final OAuth2AuthorizedClientManager clientManager;
 
-	public Integer getFoundVacanciesCount(String resumeId) {
+	public Integer getFoundVacanciesCount(String resumeId, SettingsDTO settingsDTO) {
 		try {
 			int page = 0;
 			int perPage = 50;
-			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage);
+			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, settingsDTO);
 			VacanciesVacanciesResponse vacanciesResponse = response.getBody();
 			if (vacanciesResponse != null) {
 				return vacanciesResponse.getFound();
@@ -103,7 +104,7 @@ public class VacancyService {
 		}
 	}
 
-	private Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
+	public Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
 		Integer maxResponses = selectedTariff.getMaxResponses();
 		Integer spentResponses = selectedTariff.getSpentResponses();
 		Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
@@ -254,6 +255,70 @@ public class VacancyService {
 		OAuth2AuthorizedClient client = clientManager.authorize(request);
 
 		return client != null ? client.getAccessToken().getTokenValue() : null;
+	}
+
+	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage, SettingsDTO settings) {
+		String text = null;
+		String experience = null;
+		String employment = null;
+		BigDecimal salary = null;
+		String currency = null;
+		if (settings != null) {
+			if (settings.getText() != null && !settings.getText().isEmpty()) {
+				text = settings.getText();
+			}
+			if (settings.getExperience() != null && !settings.getExperience().isEmpty()) {
+				experience = settings.getExperience();
+			}
+			if (settings.getEmployment() != null && !settings.getEmployment().isEmpty()) {
+				employment = settings.getEmployment();
+			}
+			if (settings.getSalary() != null) {
+				salary = settings.getSalary();
+			}
+			if (settings.getCurrency() != null && !settings.getCurrency().isEmpty()) {
+				currency = settings.getCurrency();
+			}
+		}
+		return resumesApi.getVacanciesSimilarToResume(
+				resumeId,
+				DEFAULT_USER_AGENT,
+				page,
+				perPage,
+				text,
+				null,
+				experience,
+				employment,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				currency,
+				salary,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				DEFAULT_LOCALE,
+				DEFAULT_HOST
+		);
 	}
 
 	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage) {

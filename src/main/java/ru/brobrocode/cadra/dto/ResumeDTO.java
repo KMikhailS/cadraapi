@@ -10,5 +10,6 @@ import lombok.Setter;
 public class ResumeDTO {
 	private String id;
 	private String title;
+	private SettingsDTO settings;
 	private Integer vacanciesToApply;
 }

@@ -58,13 +58,15 @@ public class ApplyVacanciesEventListener {
 			int applyVacanciesCount = 0;
 			for (String vacancyId : vacancyIds) {
 				VacancyItemDTO vacancyItem = getVacancyItem(vacancyId, token);
-				String coverLetter = gigaChatService.getCoverLetter(resumeProfile, vacancyItem);
+//				String coverLetter = gigaChatService.getCoverLetter(resumeProfile, vacancyItem);
+				String coverLetter = "letter";
 				log.info("Cover letter generated: {}", coverLetter);
 				VacancyApplicationRequest request = new VacancyApplicationRequest();
 				request.setResumeId(resumeId);
 				request.setVacancyId(vacancyId);
 				request.setMessage(coverLetter);
-				boolean isSuccessApplying = applyToVacancy(request, token);
+//				boolean isSuccessApplying = applyToVacancy(request, token);
+				boolean isSuccessApplying = applyToVacancy();
 				if (isSuccessApplying) {
 					applyVacanciesCount++;
 				}
@@ -131,6 +133,15 @@ public class ApplyVacanciesEventListener {
 			vacancyItemDTO.setDescription(vacancy.getDescription());
 		}
 		return vacancyItemDTO;
+	}
+
+	public boolean applyToVacancy() {
+		try {
+			Thread.sleep(4000);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return true;
 	}
 
 	public boolean applyToVacancy(VacancyApplicationRequest request, String token) {

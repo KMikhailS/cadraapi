@@ -45,6 +45,9 @@ public class UserInfo {
 	@Column(name = "role", length = 100)
 	private String role;
 
+	@Column(name = "show_onboarding")
+	private Boolean showOnboarding;
+
 	@Column(name = "created_at", nullable = false)
 	@CreatedDate
 	private LocalDateTime createdAt = LocalDateTime.now();

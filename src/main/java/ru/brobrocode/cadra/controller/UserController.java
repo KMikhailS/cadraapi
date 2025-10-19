@@ -8,13 +8,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.brobrocode.cadra.client.model.MeProfile;
 import ru.brobrocode.cadra.client.model.ResumesMineItem;
 import ru.brobrocode.cadra.client.model.ResumesMineResponse;
 import ru.brobrocode.cadra.client.model.VacanciesVacanciesResponse;
+import ru.brobrocode.cadra.dto.ResumeDTO;
+import ru.brobrocode.cadra.dto.SettingsDTO;
 import ru.brobrocode.cadra.dto.UserInfoDTO;
 import ru.brobrocode.cadra.dto.VacanciesDTO;
 import ru.brobrocode.cadra.service.UserService;
@@ -57,10 +57,15 @@ public class UserController {
 		return ResponseEntity.ok().body(userService.getCurrentUser());
 	}
 
-//	@GetMapping("/me/resume")
-//	public ResponseEntity<UserInfoDTO> getResumeInfo() {
-//		return ResponseEntity.ok().body(userService.getResumeInfo());
-//	}
+	@GetMapping("/me/{resume_id}")
+	public ResponseEntity<ResumeDTO> getResumeInfo(@PathVariable("resume_id") String resumeId) {
+		return ResponseEntity.ok().body(userService.getResumeInfo(resumeId));
+	}
+
+	@PostMapping("/settings/{resume_id}")
+	public void saveResumeSettings(@PathVariable("resume_id") String resumeId,  @RequestBody SettingsDTO settingsDTO) {
+		userService.saveResumeSettings(resumeId, settingsDTO);
+	}
 
 	@GetMapping("/resumes/mine")
 	@Operation(

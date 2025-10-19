@@ -8,6 +8,6 @@ import ru.brobrocode.cadra.entity.UserInfo;
 import java.util.Optional;
 
 @Repository
-public interface ResumeRepository extends JpaRepository<Resume, Long> {
+public interface ResumeRepository extends JpaRepository<Resume, String> {
 
 }

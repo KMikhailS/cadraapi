@@ -24,6 +24,9 @@ public class Resume {
 	@Column(name = "title", length = 500)
 	private String title;
 
+	@Column(name = "settings", columnDefinition = "TEXT")
+	private String settings;
+
 	@Lob
 	@Column(name = "pdf_link")
 	private String pdfLink;
