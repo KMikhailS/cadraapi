@@ -43,6 +43,31 @@ public class YuKassaService {
 		Map<String, Object> metaData = new HashMap<>();
 		metaData.put("userId", userInfo.getId());
 		metaData.put("tariffId", tariff.getId());
+
+		// Формирование чека для 54-ФЗ
+		String customerEmail = createPaymentRequest.getEmail() != null
+				? createPaymentRequest.getEmail()
+				: userInfo.getEmail();
+
+		Receipt receipt = Receipt.builder()
+				.customer(ReceiptCustomer.builder()
+						.email(customerEmail)
+						.build())
+				.items(java.util.Collections.singletonList(
+						ReceiptItem.builder()
+								.description(description)
+								.quantity(BigDecimal.ONE)
+								.amount(Amount.builder()
+										.value(amount)
+										.currency("RUB")
+										.build())
+								.vatCode(1)
+								.paymentMode("full_payment")
+								.paymentSubject("service")
+								.build()
+				))
+				.build();
+
 		PaymentRequest request = PaymentRequest.builder()
 				.amount(Amount.builder()
 						.value(amount)
@@ -55,6 +80,7 @@ public class YuKassaService {
 						.build())
 				.metadata(metaData)
 				.capture(true)
+				.receipt(receipt)
 				.build();
 
 		String idempotenceKey = UUID.randomUUID().toString();

@@ -53,8 +53,10 @@ public class UserService {
 		List<ResumeDTO> resumes = getResumes(userInfo);
 		UserInfoDTO userInfoDTO = userMapper.toUserInfoDTO(userInfo, selectedTariff);
 		userInfoDTO.setResumes(resumes);
-		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
-		userInfoDTO.getSelectedTariff().setAvailableVacanciesForToday(selectedTariff.getMaxResponsesPerDay() - appliedVacanciesForToday);
+		if (selectedTariff != null) {
+			Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
+			userInfoDTO.getSelectedTariff().setAvailableVacanciesForToday(selectedTariff.getMaxResponsesPerDay() - appliedVacanciesForToday);
+		}
 
 		return userInfoDTO;
 	}

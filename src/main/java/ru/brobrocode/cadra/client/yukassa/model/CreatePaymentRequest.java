@@ -9,4 +9,5 @@ import lombok.Setter;
 @Getter
 public class CreatePaymentRequest {
 	private String tariffName;
+	private String email;
 }

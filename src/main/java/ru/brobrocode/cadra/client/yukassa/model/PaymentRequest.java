@@ -13,4 +13,5 @@ public class PaymentRequest {
 	private Confirmation confirmation;
 	private boolean capture;
 	private Map<String, Object> metadata;
+	private Receipt receipt;
 }
