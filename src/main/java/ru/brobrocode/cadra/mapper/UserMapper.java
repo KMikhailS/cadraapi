@@ -32,6 +32,7 @@ public interface UserMapper {
 	@Mapping(target = "firstName", source = "userInfo.firstName")
 	@Mapping(target = "lastName", source = "userInfo.lastName")
 	@Mapping(target = "middleName", source = "userInfo.middleName")
+	@Mapping(target = "showOnboarding", source = "userInfo.showOnboarding")
 	@Mapping(target = "selectedTariff", source = "selectedTariff")
 	UserInfoDTO toUserInfoDTO(UserInfo userInfo, SelectedTariff selectedTariff);
 
