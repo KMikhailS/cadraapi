@@ -68,6 +68,9 @@ public class UserService {
 	private List<ResumeDTO> getResumes(UserInfo userInfo) {
 		List<ResumesMineItem> mineResumes = getMineResumes();
 		List<ResumeDTO> resumes = new ArrayList<>();
+		if (mineResumes.isEmpty()) {
+			return resumes;
+		}
 		for (ResumesMineItem mineResume : mineResumes) {
 			String settings = saveResume(mineResume, userInfo);
 			ResumeDTO resumeDTO = new ResumeDTO();
@@ -86,13 +89,17 @@ public class UserService {
 					DEFAULT_LOCALE,
 					DEFAULT_HOST
 			);
+//			if (response.getStatusCode().is4xxClientError()) {
+//				log.error("Error getting current user resume information");
+//				return Collections.emptyList();
+//			}
 
 			ResumesMineResponse resumesResponse = response.getBody();
 			if (resumesResponse != null) {
 				return resumesResponse.getItems();
 			}
 		} catch (Exception e) {
-			log.error("Error getting current user information", e);
+			log.error("Error getting current user resume information", e);
 			throw new RuntimeException("Failed to retrieve user information from hh.ru", e);
 		}
 		return Collections.emptyList();

@@ -67,6 +67,7 @@ public class SecurityConfig {
 								"/webjars/**",
 								"/swagger-resources/**",
 								"/callback/payment",
+								"/callback/payment/result",
 								"/payments",
 								"/payments/**",
 								"/tariffs",

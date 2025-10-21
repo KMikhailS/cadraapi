@@ -76,7 +76,7 @@ public class YuKassaService {
 				.description(description)
 				.confirmation(Confirmation.builder()
 						.type("redirect")
-						.returnUrl(returnUrl)
+						.returnUrl(returnUrl + "/api/callback/payment/result?userId=" + userInfo.getId())
 						.build())
 				.metadata(metaData)
 				.capture(true)
