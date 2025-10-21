@@ -3,8 +3,6 @@ package ru.brobrocode.cadra.security;
 import jakarta.servlet.ServletException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -50,7 +48,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 		}
 		OAuth2User oauth2User = oauthToken.getPrincipal();
 
-		// Получаем registrationId (например, "hhru")
+		// Получаем registrationId (например, "hh")
 		String registrationId = oauthToken.getAuthorizedClientRegistrationId();
 
 		// Извлекаем данные пользователя из OAuth2User
@@ -90,8 +88,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 				.queryParam("refreshToken", refreshToken)
 				.build().toUriString();
 
-//		setDefaultTargetUrl(targetUrl);
-//		super.onAuthenticationSuccess(request, response, authentication);
 		getRedirectStrategy().sendRedirect(request, response, targetUrl);
 	}
 }

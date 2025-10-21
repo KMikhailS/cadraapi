@@ -2,38 +2,40 @@ package ru.brobrocode.cadra.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.brobrocode.cadra.client.api.MeApi;
 import ru.brobrocode.cadra.client.api.ResumesApi;
-import ru.brobrocode.cadra.client.model.MeApplicantProfile;
-import ru.brobrocode.cadra.client.model.MeProfile;
-import ru.brobrocode.cadra.client.model.ResumesMineItem;
-import ru.brobrocode.cadra.client.model.ResumesMineResponse;
+import ru.brobrocode.cadra.client.model.*;
 import ru.brobrocode.cadra.dto.ResumeDTO;
+import ru.brobrocode.cadra.dto.SelectedTariffDTO;
 import ru.brobrocode.cadra.dto.SettingsDTO;
 import ru.brobrocode.cadra.dto.UserInfoDTO;
 import ru.brobrocode.cadra.entity.Resume;
 import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.UserInfo;
-import ru.brobrocode.cadra.entity.VacancyProcessingState;
 import ru.brobrocode.cadra.mapper.UserMapper;
 import ru.brobrocode.cadra.repository.ResumeRepository;
 import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
 import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static ru.brobrocode.cadra.constants.HHApiConstants.*;
 
@@ -47,26 +49,95 @@ public class UserService {
 	private final MeApi meApi;
 	private final ResumesApi resumesApi;
 	private final SelectedTariffRepository selectedTariffRepository;
-	private final UserMapper userMapper;
+//	private final UserMapper userMapper;
 	private final VacancyService vacancyService;
-	private final VacancyProcessingStateRepository vacancyProcessingStateRepository;
 	private final ObjectMapper objectMapper;
+	private final OAuth2AuthorizedClientManager clientManager;
+	private final LoadingCache<String, UserInfoDTO> userInfoCache;
 
 	public UserInfoDTO getCurrentUser() {
 		UserInfo userInfo = getUserInfo();
-		SelectedTariff selectedTariff = getSelectedTariff(userInfo.getId());
-		List<ResumeDTO> resumes = getResumes(userInfo);
-		UserInfoDTO userInfoDTO = userMapper.toUserInfoDTO(userInfo, selectedTariff);
-		userInfoDTO.setResumes(resumes);
-		if (selectedTariff != null) {
-			Integer availableVacanciesForToday = vacancyService.getResponsesCount(selectedTariff, userInfo);
-			userInfoDTO.getSelectedTariff().setAvailableVacanciesForToday(availableVacanciesForToday);
+		if (userInfo == null) {
+			throw new RuntimeException("User not found");
 		}
-
+		if (userInfo.getAccessToken() == null) {
+			saveTokens(userInfo);
+		}
+		UserInfoDTO userInfoDTO = userInfoCache.get(userInfo.getId());
+		if (userInfoDTO == null || userInfoDTO.getId() == null) {
+			userInfoDTO = getCurrentUserInfo(userInfo, userInfo.getAccessToken());
+			SelectedTariff selectedTariff = getSelectedTariff(userInfo.getId());
+			fillSelectedTariff(userInfoDTO, selectedTariff, userInfo);
+			List<ResumeDTO> resumes = getResumes(userInfo);
+			userInfoDTO.setResumes(resumes);
+			userInfoCache.put(userInfo.getId(), userInfoDTO);
+		}
 		return userInfoDTO;
 	}
+
+	private void fillSelectedTariff(UserInfoDTO userInfoDTO, SelectedTariff selectedTariff, UserInfo userInfo) {
+		if (selectedTariff == null) {
+			return;
+		}
+		SelectedTariffDTO selectedTariffDTO = new SelectedTariffDTO();
+		selectedTariffDTO.setTitle(selectedTariff.getTariff().getName());
+		selectedTariffDTO.setMaxResponses(selectedTariff.getMaxResponses());
+		Integer availableVacanciesForToday = vacancyService.getResponsesCount(selectedTariff, userInfo);
+		selectedTariffDTO.setAvailableVacanciesForToday(availableVacanciesForToday);
+		userInfoDTO.setSelectedTariff(selectedTariffDTO);
+	}
+
+	private UserInfoDTO getCurrentUserInfo(UserInfo userInfo, String accessToken) {
+		UserInfoDTO userInfoDTO = new UserInfoDTO();
+		userInfoDTO.setId(userInfo.getId());
+		ResponseEntity<MeProfile> currentUserInfo = meApi.getCurrentUserInfo(
+				DEFAULT_USER_AGENT,
+				"Bearer " + accessToken,
+				DEFAULT_LOCALE,
+				DEFAULT_HOST);
+		if (currentUserInfo.getStatusCode().is2xxSuccessful()) {
+			MeProfile meProfile = currentUserInfo.getBody();
+			if (meProfile instanceof MeManagerProfile) {
+				userInfoDTO.setMessage("Пользователь является работодателем");
+			} else if (meProfile instanceof MeApplicantProfile applicant) {
+				userInfoDTO.setEmail(applicant.getEmail());
+				userInfoDTO.setPhone(applicant.getPhone());
+				userInfoDTO.setFirstName(applicant.getFirstName());
+				userInfoDTO.setLastName(applicant.getLastName());
+				userInfoDTO.setMiddleName(applicant.getMiddleName());
+				userInfoDTO.setShowOnboarding(userInfo.getShowOnboarding());
+			}
+		}
+		return userInfoDTO;
+	}
+
+	private void saveTokens(UserInfo userInfo) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication == null) {
+			return;
+		}
+		OAuth2AuthorizeRequest request = OAuth2AuthorizeRequest
+				.withClientRegistrationId("hh")
+				.principal(authentication)
+				.build();
+
+		OAuth2AuthorizedClient client = clientManager.authorize(request);
+		if (client != null) {
+			if (client.getAccessToken() != null) {
+				String accessToken = client.getAccessToken().getTokenValue();
+				userInfo.setAccessToken(accessToken);
+			}
+			if (client.getRefreshToken() != null) {
+				String refreshToken = client.getRefreshToken().getTokenValue();
+				userInfo.setRefreshToken(refreshToken);
+			}
+			userInfoRepository.save(userInfo);
+		}
+	}
+
+
 	private List<ResumeDTO> getResumes(UserInfo userInfo) {
-		List<ResumesMineItem> mineResumes = getMineResumes();
+		List<ResumesMineItem> mineResumes = getMineResumes(userInfo.getAccessToken());
 		List<ResumeDTO> resumes = new ArrayList<>();
 		if (mineResumes.isEmpty()) {
 			return resumes;
@@ -82,18 +153,14 @@ public class UserService {
 		return resumes;
 	}
 
-	public List<ResumesMineItem> getMineResumes() {
+	public List<ResumesMineItem> getMineResumes(String accessToken) {
 		try {
 			ResponseEntity<ResumesMineResponse> response = resumesApi.getMineResumes(
 					DEFAULT_USER_AGENT,
+					"Bearer " + accessToken,
 					DEFAULT_LOCALE,
 					DEFAULT_HOST
 			);
-//			if (response.getStatusCode().is4xxClientError()) {
-//				log.error("Error getting current user resume information");
-//				return Collections.emptyList();
-//			}
-
 			ResumesMineResponse resumesResponse = response.getBody();
 			if (resumesResponse != null) {
 				return resumesResponse.getItems();
@@ -147,13 +214,13 @@ public class UserService {
 		if (userInfo == null) {
 			userInfo = new UserInfo();
 			userInfo.setId((String) attributes.get("id"));
+			userInfo.setRole("ROLE_USER");
 		}
-		userInfo.setRole("ROLE_USER");
-		userInfo.setPhone((String) attributes.get("phone"));
-		userInfo.setEmail((String) attributes.get("email"));
-		userInfo.setFirstName((String) attributes.get("first_name"));
-		userInfo.setLastName((String) attributes.get("last_name"));
-		userInfo.setMiddleName((String) attributes.get("middle_name"));
+//		userInfo.setPhone((String) attributes.get("phone"));
+//		userInfo.setEmail((String) attributes.get("email"));
+//		userInfo.setFirstName((String) attributes.get("first_name"));
+//		userInfo.setLastName((String) attributes.get("last_name"));
+//		userInfo.setMiddleName((String) attributes.get("middle_name"));
 		return userInfoRepository.save(userInfo);
 	}
 

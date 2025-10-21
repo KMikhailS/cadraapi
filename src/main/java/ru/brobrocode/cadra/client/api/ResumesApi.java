@@ -375,6 +375,7 @@ public interface ResumesApi {
     
     ResponseEntity<ResumesMineResponse> getMineResumes(
         @NotNull @Parameter(name = "HH-User-Agent", description = "Название приложения и контактная почта разработчика (см. [Информация о клиенте](#section/Obshaya-informaciya/Trebovaniya-k-zaprosam)) ", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "HH-User-Agent", required = true) String hhUserAgent,
+        @NotNull @Parameter(name = "Authorization", description = "Токен", required = true, in = ParameterIn.HEADER) @RequestHeader(value = "Authorization", required = true) String token,
         @Parameter(name = "locale", description = "Идентификатор локали (см. [Локализация](#tag/Obshie-spravochniki/operation/get-locales)) ", in = ParameterIn.QUERY) @Valid @RequestParam(value = "locale", required = false, defaultValue = "RU") String locale,
         @Parameter(name = "host", description = "Доменное имя сайта (см. [Выбор сайта](#section/Obshaya-informaciya/Vybor-sajta)) ", in = ParameterIn.QUERY) @Valid @RequestParam(value = "host", required = false, defaultValue = "hh.ru") String host
     );

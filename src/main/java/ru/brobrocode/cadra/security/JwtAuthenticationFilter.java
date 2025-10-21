@@ -56,6 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				Claims claims = jwtService.extractClaims(token);
 				String userId = claims.getSubject();
 				String email = claims.get("email", String.class);
+				String phone = claims.get("phone", String.class);
 				String firstName = claims.get("firstName", String.class);
 				String lastName = claims.get("lastName", String.class);
 				String registrationId = claims.get("registrationId", String.class);
@@ -68,9 +69,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				Map<String, Object> attributes = new HashMap<>();
 				attributes.put("id", user.getId());
 				attributes.put("email", email);
+				attributes.put("phone", phone);
 				attributes.put("first_name", firstName);
 				attributes.put("last_name", lastName);
-				attributes.put("internalUserId", user.getId());
+//				attributes.put("internalUserId", user.getId());
 
 				// Создаем authorities
 				Set<SimpleGrantedAuthority> grantedAuthorities = new HashSet<>();

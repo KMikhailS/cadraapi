@@ -25,7 +25,7 @@ public class OAuth2FeignRequestInterceptor implements RequestInterceptor {
 	@Value("${yukassa.secret-key}")
 	private String secretKey;
 
-	private final OAuth2AuthorizedClientManager clientManager;
+//	private final OAuth2AuthorizedClientManager clientManager;
 
 	@Override
 	public void apply(RequestTemplate template) {
@@ -35,28 +35,29 @@ public class OAuth2FeignRequestInterceptor implements RequestInterceptor {
 			String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes());
 			template.header("Authorization", "Basic " + base64Credentials);
 			template.header("Content-Type", "application/json");
-		} else {
-			String token = getAccessToken();
-			if (token != null) {
-				template.header("Authorization", "Bearer " + token);
-			}
 		}
+//		} else {
+//			String token = getAccessToken();
+//			if (token != null) {
+//				template.header("Authorization", "Bearer " + token);
+//			}
+//		}
 	}
 
-	private String getAccessToken() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-		if (authentication == null) {
-			return null;
-		}
-
-		OAuth2AuthorizeRequest request = OAuth2AuthorizeRequest
-				.withClientRegistrationId("hh")
-				.principal(authentication)
-				.build();
-
-		OAuth2AuthorizedClient client = clientManager.authorize(request);
-
-		return client != null ? client.getAccessToken().getTokenValue() : null;
-	}
+//	private String getAccessToken() {
+//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//
+//		if (authentication == null) {
+//			return null;
+//		}
+//
+//		OAuth2AuthorizeRequest request = OAuth2AuthorizeRequest
+//				.withClientRegistrationId("hh")
+//				.principal(authentication)
+//				.build();
+//
+//		OAuth2AuthorizedClient client = clientManager.authorize(request);
+//
+//		return client != null ? client.getAccessToken().getTokenValue() : null;
+//	}
 }

@@ -67,31 +67,31 @@ public class UserController {
 		userService.saveResumeSettings(resumeId, settingsDTO);
 	}
 
-	@GetMapping("/resumes/mine")
-	@Operation(
-			summary = "Get current user information",
-			description = "Retrieves information about the currently authenticated user from hh.ru",
-			responses = {
-					@ApiResponse(
-							responseCode = "200",
-							description = "Successfully retrieved user information",
-							content = @Content(
-									mediaType = "application/json",
-									schema = @Schema(implementation = MeProfile.class)
-							)
-					),
-					@ApiResponse(
-							responseCode = "403",
-							description = "Authentication required or user not authorized"
-					),
-					@ApiResponse(
-							responseCode = "500",
-							description = "Internal server error when calling hh.ru API"
-					)
-			}
-	)
-	public ResponseEntity<List<ResumesMineItem>> getMineResumes() {
-
-		return ResponseEntity.ok().body(userService.getMineResumes());
-	}
+//	@GetMapping("/resumes/mine")
+//	@Operation(
+//			summary = "Get current user information",
+//			description = "Retrieves information about the currently authenticated user from hh.ru",
+//			responses = {
+//					@ApiResponse(
+//							responseCode = "200",
+//							description = "Successfully retrieved user information",
+//							content = @Content(
+//									mediaType = "application/json",
+//									schema = @Schema(implementation = MeProfile.class)
+//							)
+//					),
+//					@ApiResponse(
+//							responseCode = "403",
+//							description = "Authentication required or user not authorized"
+//					),
+//					@ApiResponse(
+//							responseCode = "500",
+//							description = "Internal server error when calling hh.ru API"
+//					)
+//			}
+//	)
+//	public ResponseEntity<List<ResumesMineItem>> getMineResumes() {
+//
+//		return ResponseEntity.ok().body(userService.getMineResumes());
+//	}
 }

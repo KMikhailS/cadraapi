@@ -45,6 +45,12 @@ public class UserInfo {
 	@Column(name = "role", length = 100)
 	private String role;
 
+	@Column(name = "access_token")
+	private String accessToken;
+
+	@Column(name = "refresh_token")
+	private String refreshToken;
+
 	@Column(name = "show_onboarding")
 	private Boolean showOnboarding;
 

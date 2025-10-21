@@ -19,4 +19,5 @@ public class UserInfoDTO {
 	private Boolean showOnboarding;
 	private SelectedTariffDTO selectedTariff;
 	private List<ResumeDTO> resumes;
+	private String message;
 }
