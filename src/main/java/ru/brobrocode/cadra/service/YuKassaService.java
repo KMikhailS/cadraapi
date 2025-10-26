@@ -3,8 +3,6 @@ package ru.brobrocode.cadra.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import ru.brobrocode.cadra.client.yukassa.YuKassaClient;
 import ru.brobrocode.cadra.client.yukassa.YuKassaException;
@@ -14,7 +12,6 @@ import ru.brobrocode.cadra.entity.Payment;
 import ru.brobrocode.cadra.entity.PaymentStatus;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.repository.PaymentRepository;
-import ru.brobrocode.cadra.repository.UserInfoRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,12 +29,12 @@ public class YuKassaService {
 
 	private final YuKassaClient yuKassaClient;
 	private final TariffService tariffService;
-	private final UserInfoRepository userInfoRepository;
 	private final PaymentRepository paymentRepository;
+	private final UserStateService userStateService;
 
 	public PaymentResponse createPayment(CreatePaymentRequest createPaymentRequest) {
 		TariffResponse tariff = tariffService.getTariffByName(createPaymentRequest.getTariffName());
-		UserInfo userInfo = getUserInfo();
+		UserInfo userInfo = userStateService.getUserInfo();
 		BigDecimal amount = tariff.getPrice();
 		String description = "Оплата тарифа " + tariff.getName();
 		Map<String, Object> metaData = new HashMap<>();
@@ -139,16 +136,5 @@ public class YuKassaService {
 
 		String idempotenceKey = UUID.randomUUID().toString();
 		return yuKassaClient.createRefund(idempotenceKey, request);
-	}
-
-	private UserInfo getUserInfo() {
-		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		if (principal instanceof OAuth2User user) {
-			Map<String, Object> attributes = user.getAttributes();
-			String userId = (String) attributes.get("id");
-			return userInfoRepository.findById(userId)
-					.orElseThrow(() -> new IllegalArgumentException("User not found"));
-		}
-		throw new IllegalStateException("User not found");
 	}
 }

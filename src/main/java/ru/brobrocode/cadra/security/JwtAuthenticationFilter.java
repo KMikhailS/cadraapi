@@ -1,25 +1,21 @@
 package ru.brobrocode.cadra.security;
 
 import io.jsonwebtoken.Claims;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 import ru.brobrocode.cadra.entity.UserInfo;
-import ru.brobrocode.cadra.repository.UserInfoRepository;
 import ru.brobrocode.cadra.service.JwtService;
-import ru.brobrocode.cadra.service.UserService;
+import ru.brobrocode.cadra.service.UserStateService;
 
 import java.io.IOException;
 import java.util.*;
@@ -29,11 +25,11 @@ import java.util.*;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtService jwtService;
-	private final UserService userService;
+	private final UserStateService userStateService;
 
-	public JwtAuthenticationFilter(JwtService jwtService, UserService userService) {
+	public JwtAuthenticationFilter(JwtService jwtService, UserStateService userStateService) {
 		this.jwtService = jwtService;
-		this.userService = userService;
+		this.userStateService = userStateService;
 	}
 
 	@Override
@@ -63,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				List<String> authorities = claims.get("authorities", List.class);
 
 				// Загружаем пользователя из БД
-				UserInfo user = userService.findById(userId);
+				UserInfo user = userStateService.findById(userId);
 
 				// Создаем атрибуты для OAuth2User
 				Map<String, Object> attributes = new HashMap<>();

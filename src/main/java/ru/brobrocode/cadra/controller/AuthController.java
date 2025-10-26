@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.brobrocode.cadra.dto.RefreshTokenRequest;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.service.JwtService;
-import ru.brobrocode.cadra.service.UserService;
+import ru.brobrocode.cadra.service.UserStateService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.Map;
 public class AuthController {
 
 	private final JwtService jwtService;
-	private final UserService userService;
+	private final UserStateService userStateService;
 
 	@GetMapping("validate")
 	public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String authHeader) {
@@ -40,7 +40,7 @@ public class AuthController {
 		}
 
 		String userId = jwtService.extractUserId(refreshToken);
-		UserInfo user = userService.findById(userId);
+		UserInfo user = userStateService.findById(userId);
 
 		// Создаем новые claims
 		Map<String, Object> claims = new HashMap<>();

@@ -20,4 +20,5 @@ public class UserInfoDTO {
 	private SelectedTariffDTO selectedTariff;
 	private List<ResumeDTO> resumes;
 	private String message;
+	private String accessToken;
 }

@@ -54,24 +54,24 @@ public class UserService {
 	private final ObjectMapper objectMapper;
 	private final OAuth2AuthorizedClientManager clientManager;
 	private final LoadingCache<String, UserInfoDTO> userInfoCache;
+	private final UserStateService userStateService;
 
 	public UserInfoDTO getCurrentUser() {
-		UserInfo userInfo = getUserInfo();
+		UserInfo userInfo = userStateService.getUserInfo();
 		if (userInfo == null) {
 			throw new RuntimeException("User not found");
 		}
 		if (userInfo.getAccessToken() == null) {
 			saveTokens(userInfo);
 		}
-		UserInfoDTO userInfoDTO = userInfoCache.get(userInfo.getId());
-		if (userInfoDTO == null || userInfoDTO.getId() == null) {
-			userInfoDTO = getCurrentUserInfo(userInfo, userInfo.getAccessToken());
-			SelectedTariff selectedTariff = getSelectedTariff(userInfo.getId());
-			fillSelectedTariff(userInfoDTO, selectedTariff, userInfo);
-			List<ResumeDTO> resumes = getResumes(userInfo);
-			userInfoDTO.setResumes(resumes);
-			userInfoCache.put(userInfo.getId(), userInfoDTO);
+		UserInfoDTO userInfoDTO = userStateService.getUserInfoDTO(userInfo);
+		if (userInfoDTO.getMessage() != null && !userInfoDTO.getMessage().isEmpty()) {
+			return userInfoDTO;
 		}
+		SelectedTariff selectedTariff = getSelectedTariff(userInfo.getId());
+		fillSelectedTariff(userInfoDTO, selectedTariff, userInfo);
+		List<ResumeDTO> resumes = getResumes(userInfo);
+		userInfoDTO.setResumes(resumes);
 		return userInfoDTO;
 	}
 
@@ -82,6 +82,7 @@ public class UserService {
 		SelectedTariffDTO selectedTariffDTO = new SelectedTariffDTO();
 		selectedTariffDTO.setTitle(selectedTariff.getTariff().getName());
 		selectedTariffDTO.setMaxResponses(selectedTariff.getMaxResponses());
+		selectedTariffDTO.setSpentResponses(selectedTariff.getSpentResponses());
 		Integer availableVacanciesForToday = vacancyService.getResponsesCount(selectedTariff, userInfo);
 		selectedTariffDTO.setAvailableVacanciesForToday(availableVacanciesForToday);
 		userInfoDTO.setSelectedTariff(selectedTariffDTO);
@@ -98,7 +99,7 @@ public class UserService {
 		if (currentUserInfo.getStatusCode().is2xxSuccessful()) {
 			MeProfile meProfile = currentUserInfo.getBody();
 			if (meProfile instanceof MeManagerProfile) {
-				userInfoDTO.setMessage("Пользователь является работодателем");
+				userInfoDTO.setMessage("Ваш статус на hh.ru работодатель. Чтобы пользоваться сервисом поменяйте статус на соискатель");
 			} else if (meProfile instanceof MeApplicantProfile applicant) {
 				userInfoDTO.setEmail(applicant.getEmail());
 				userInfoDTO.setPhone(applicant.getPhone());
@@ -134,7 +135,6 @@ public class UserService {
 			userInfoRepository.save(userInfo);
 		}
 	}
-
 
 	private List<ResumeDTO> getResumes(UserInfo userInfo) {
 		List<ResumesMineItem> mineResumes = getMineResumes(userInfo.getAccessToken());
@@ -192,36 +192,6 @@ public class UserService {
 			return null;
 		}
 		return existResume.getSettings();
-	}
-
-	private UserInfo getUserInfo() {
-		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		if (principal instanceof OAuth2User user) {
-			Map<String, Object> attributes = user.getAttributes();
-			String userId = (String) attributes.get("id");
-			return userInfoRepository.findById(userId)
-					.orElseThrow(() -> new IllegalArgumentException("User not found"));
-		}
-		throw new IllegalStateException("User not found");
-	}
-
-	public UserInfo findById(String userId) {
-		return userInfoRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
-	}
-
-	public UserInfo processOAuthUser(Map<String, Object> attributes) {
-		UserInfo userInfo = userInfoRepository.findById((String) attributes.get("id")).orElse(null);
-		if (userInfo == null) {
-			userInfo = new UserInfo();
-			userInfo.setId((String) attributes.get("id"));
-			userInfo.setRole("ROLE_USER");
-		}
-//		userInfo.setPhone((String) attributes.get("phone"));
-//		userInfo.setEmail((String) attributes.get("email"));
-//		userInfo.setFirstName((String) attributes.get("first_name"));
-//		userInfo.setLastName((String) attributes.get("last_name"));
-//		userInfo.setMiddleName((String) attributes.get("middle_name"));
-		return userInfoRepository.save(userInfo);
 	}
 
 	public ResumeDTO getResumeInfo(String resumeId) {

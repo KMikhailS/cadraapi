@@ -46,6 +46,7 @@ public class VacancyProcessingState {
 	public enum Status {
 		PROCESS,
 		COMPLETED,
+		STOPPED,
 		ERROR
 	}
 }

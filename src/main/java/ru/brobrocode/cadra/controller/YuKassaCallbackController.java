@@ -24,12 +24,7 @@ import java.util.Map;
 @Slf4j
 public class YuKassaCallbackController {
 
-	private final YuKassaCallbackService webhookService;
-	private final JwtService jwtService;
-	private final UserService userService;
-
-	@Value("${yukassa.redirect-url}")
-	private String returnUrl;
+	private final YuKassaCallbackService yuKassaCallbackService;
 
 	@PostMapping
 	public ResponseEntity<Void> handleCallback(
@@ -41,7 +36,7 @@ public class YuKassaCallbackController {
 			log.debug("Webhook payload: {}", rawPayload);
 
 			// Парсинг и обработка webhook'а
-			webhookService.processCallback(rawPayload, headers);
+			yuKassaCallbackService.processCallback(rawPayload, headers);
 
 			return ResponseEntity.ok().build();
 
@@ -53,49 +48,7 @@ public class YuKassaCallbackController {
 
 	@GetMapping("/result")
 	public void handleSuccessPayment(
-			@RequestParam("userId") String userId,
-			HttpServletResponse response) throws IOException {
-
-		try {
-			log.info("Processing payment result for user: {}", userId);
-
-			// Получаем информацию о пользователе
-			UserInfo user = userService.findById(userId);
-
-			if (user == null) {
-				log.error("User not found: {}", userId);
-				response.sendRedirect(returnUrl + "/subscription?error=user_not_found");
-				return;
-			}
-
-			// Генерируем JWT токены
-			Map<String, Object> claims = new HashMap<>();
-			claims.put("email", user.getEmail());
-			claims.put("firstName", user.getFirstName());
-			claims.put("lastName", user.getLastName());
-			claims.put("registrationId", "hh"); // По умолчанию HeadHunter
-			claims.put("authorities", List.of("ROLE_USER"));
-
-			String accessToken = jwtService.generateAccessToken(userId, claims);
-			String refreshToken = jwtService.generateRefreshToken(userId);
-
-			// Обрабатываем результат оплаты
-//			webhookService.processResult(userId);
-
-			// Редирект на фронтенд с токенами
-			String redirectUrl = String.format(
-				"%s/subscription?accessToken=%s&refreshToken=%s",
-					returnUrl,
-				accessToken,
-				refreshToken
-			);
-
-			log.info("Redirecting user {} to frontend with tokens", userId);
-			response.sendRedirect(redirectUrl);
-
-		} catch (Exception e) {
-			log.error("Error processing payment result for user: {}", userId, e);
-			response.sendRedirect(returnUrl + "/subscription?error=processing_failed");
-		}
+			@RequestParam("userId") String userId, HttpServletResponse response) throws IOException {
+		yuKassaCallbackService.handleSuccessPayment(userId, response);
 	}
 }

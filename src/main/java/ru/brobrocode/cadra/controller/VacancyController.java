@@ -54,4 +54,11 @@ public class VacancyController {
 		log.info("ApplyStatusResponse: {}", response);
 		return ResponseEntity.ok(response);
 	}
+
+	@PostMapping("apply-status/{process_id}")
+	public ResponseEntity<ApplyStatusResponse> putApplyVacancyStatus(@PathVariable("process_id") String processId, @RequestBody VacancyStatusRequest vacancyStatusRequest) {
+		ApplyStatusResponse response = vacancyService.putApplyVacancyStatus(processId, vacancyStatusRequest);
+		log.info("POST ApplyStatusResponse: {}", response);
+		return ResponseEntity.ok(response);
+	}
 }

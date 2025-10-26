@@ -9,6 +9,7 @@ import ru.brobrocode.cadra.client.model.IncludesIdName;
 import ru.brobrocode.cadra.client.model.NegotiationsListItem;
 import ru.brobrocode.cadra.client.model.NegotiationsListResponse;
 import ru.brobrocode.cadra.dto.NegotiationsStatsDTO;
+import ru.brobrocode.cadra.entity.UserInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +28,11 @@ public class NegotiationService {
     public static final String HIDDEN = "hidden";
 
     private final NegotiationsApi negotiationsApi;
+    private final UserStateService userStateService;
 
     public NegotiationsStatsDTO getNegotiationsStats() {
-        List<NegotiationsListItem> allNegotiations = getAllNegotiations();
+        UserInfo userInfo = userStateService.getUserInfo();
+        List<NegotiationsListItem> allNegotiations = getAllNegotiations(userInfo.getAccessToken());
         NegotiationsStatsDTO stats = new NegotiationsStatsDTO();
         int total = allNegotiations.size();
         int notResponded = 0;
@@ -53,7 +56,7 @@ public class NegotiationService {
         return stats;
     }
 
-    public List<NegotiationsListItem> getAllNegotiations() {
+    public List<NegotiationsListItem> getAllNegotiations(String accessToken) {
         List<NegotiationsListItem> allNegotiations = new ArrayList<>();
         int page = 0;
         int perPage = 50;
@@ -62,6 +65,7 @@ public class NegotiationService {
             while (true) {
                 ResponseEntity<NegotiationsListResponse> response = negotiationsApi.getNegotiations(
                         DEFAULT_USER_AGENT,
+                        "Bearer " + accessToken,
                         page,
                         perPage,
                         null, // orderBy
@@ -75,15 +79,17 @@ public class NegotiationService {
                         DEFAULT_HOST
                 );
 
-                NegotiationsListResponse negotiationsResponse = response.getBody();
-                if (negotiationsResponse == null || 
-                    negotiationsResponse.getItems() == null || 
-                    negotiationsResponse.getItems().isEmpty()) {
-                    break;
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    NegotiationsListResponse negotiationsResponse = response.getBody();
+                    if (negotiationsResponse == null ||
+                            negotiationsResponse.getItems() == null ||
+                            negotiationsResponse.getItems().isEmpty()) {
+                        break;
+                    }
+
+                    allNegotiations.addAll(negotiationsResponse.getItems());
+                    page++;
                 }
-                
-                allNegotiations.addAll(negotiationsResponse.getItems());
-                page++;
             }
             
             log.info("Retrieved {} total negotiations", allNegotiations.size());

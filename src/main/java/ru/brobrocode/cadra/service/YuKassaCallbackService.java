@@ -1,8 +1,10 @@
 package ru.brobrocode.cadra.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.brobrocode.cadra.client.yukassa.CallbackProcessingException;
@@ -13,9 +15,12 @@ import ru.brobrocode.cadra.entity.*;
 import ru.brobrocode.cadra.repository.PaymentRepository;
 import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +34,11 @@ public class YuKassaCallbackService {
 	private final UserService userService;
 	private final TariffService tariffService;
 	private final SelectedTariffRepository selectedTariffRepository;
+	private final JwtService jwtService;
+	private final UserStateService userStateService;
+
+	@Value("${yukassa.redirect-url}")
+	private String returnUrl;
 
 	// IP адреса ЮKassa для проверки
 	private final Set<String> VALID_YUKASSA_IPS = Set.of(
@@ -98,7 +108,7 @@ public class YuKassaCallbackService {
 
 				Map<String, Object> metadata = paymentObject.getMetadata();
 				String userId = (String) metadata.get("userId");
-				UserInfo userInfo = userService.findById(userId);
+				UserInfo userInfo = userStateService.findById(userId);
 				Object tariffIdValue = metadata.get("tariffId");
 				Long tariffId = null;
 				if (tariffIdValue instanceof String) {
@@ -204,5 +214,49 @@ public class YuKassaCallbackService {
 			return (String) metadata.get("order_id");
 		}
 		return null;
+	}
+
+	public void handleSuccessPayment(String userId, HttpServletResponse response) throws IOException {
+		try {
+			log.info("Processing payment result for user: {}", userId);
+
+			// Получаем информацию о пользователе
+			UserInfo user = userStateService.findById(userId);
+
+			if (user == null) {
+				log.error("User not found: {}", userId);
+				response.sendRedirect(returnUrl + "/subscription?error=user_not_found");
+				return;
+			}
+
+			// Генерируем JWT токены
+			Map<String, Object> claims = new HashMap<>();
+			claims.put("email", user.getEmail());
+			claims.put("firstName", user.getFirstName());
+			claims.put("lastName", user.getLastName());
+			claims.put("registrationId", "hh"); // По умолчанию HeadHunter
+			claims.put("authorities", List.of("ROLE_USER"));
+
+			String accessToken = jwtService.generateAccessToken(userId, claims);
+			String refreshToken = jwtService.generateRefreshToken(userId);
+
+			// Обрабатываем результат оплаты
+//			webhookService.processResult(userId);
+
+			// Редирект на фронтенд с токенами
+			String redirectUrl = String.format(
+					"%s/subscription?accessToken=%s&refreshToken=%s",
+					returnUrl,
+					accessToken,
+					refreshToken
+			);
+
+			log.info("Redirecting user {} to frontend with tokens", userId);
+			response.sendRedirect(redirectUrl);
+
+		} catch (Exception e) {
+			log.error("Error processing payment result for user: {}", userId, e);
+			response.sendRedirect(returnUrl + "/subscription?error=processing_failed");
+		}
 	}
 }

@@ -1,6 +1,8 @@
 package ru.brobrocode.cadra.security;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -10,30 +12,27 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.service.JwtService;
-import ru.brobrocode.cadra.service.UserService;
+import ru.brobrocode.cadra.service.UserStateService;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @Slf4j
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
 	private final JwtService jwtService;
-	private final UserService userService;
+	private final UserStateService userStateService;
 
 	@Value("${cadra.dashboard-redirect-uri}")
 	private String dashboardRedirectUri;
 
-	public OAuth2AuthenticationSuccessHandler(JwtService jwtService, UserService userService) {
+	public OAuth2AuthenticationSuccessHandler(JwtService jwtService, UserStateService userStateService) {
 		this.jwtService = jwtService;
-		this.userService = userService;
+		this.userStateService = userStateService;
 	}
 
 	@Override
@@ -61,7 +60,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 		String lastName = (String) attributes.get("last_name");
 
 		// Сохраняем/обновляем пользователя в БД
-		UserInfo user = userService.processOAuthUser(attributes);
+		UserInfo user = userStateService.processOAuthUser(attributes);
 
 		// Создаем claims для JWT
 		Map<String, Object> claims = new HashMap<>();

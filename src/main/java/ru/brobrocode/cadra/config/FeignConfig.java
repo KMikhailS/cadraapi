@@ -13,11 +13,11 @@ import ru.brobrocode.cadra.service.AuthService;
 @RequiredArgsConstructor
 public class FeignConfig {
 
-	private final OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
+//	private final OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
 
     @Bean
     public OAuth2FeignRequestInterceptor requestInterceptor() {
-        return new OAuth2FeignRequestInterceptor(oAuth2AuthorizedClientManager);
+        return new OAuth2FeignRequestInterceptor();
     }
 
 	@Bean

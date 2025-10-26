@@ -1,14 +1,12 @@
 package ru.brobrocode.cadra.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +19,7 @@ import ru.brobrocode.cadra.entity.SelectedTariff;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.entity.VacancyProcessingState;
 import ru.brobrocode.cadra.mapper.VacancyMapper;
+import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
 import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
 
@@ -41,13 +40,17 @@ public class VacancyService {
 	private final UserInfoRepository userInfoRepository;
 	private final ApplicationEventPublisher applicationEventPublisher;
 	private final VacancyProcessingStateRepository vacancyProcessingStateRepository;
-	private final OAuth2AuthorizedClientManager clientManager;
+	private final Cache<String, VacancyProcessingStateDTO> vacancyProcessingStateCache;
+	private final UserStateService userStateService;
+	private final SelectedTariffRepository selectedTariffRepository;
 
 	public Integer getFoundVacanciesCount(String resumeId, SettingsDTO settingsDTO) {
+		UserInfo userInfo = userStateService.getUserInfo();
+		String accessToken = userInfo.getAccessToken();
 		try {
 			int page = 0;
 			int perPage = 50;
-			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, settingsDTO);
+			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, settingsDTO, accessToken);
 			VacanciesVacanciesResponse vacanciesResponse = response.getBody();
 			if (vacanciesResponse != null) {
 				return vacanciesResponse.getFound();
@@ -61,7 +64,9 @@ public class VacancyService {
 
 	public VacanciesDTO getVacanciesSimilarToResume(String resumeId, Integer page, Integer perPage) {
 		try {
-			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage);
+			UserInfo userInfo = userStateService.getUserInfo();
+			String accessToken = userInfo.getAccessToken();
+			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, accessToken);
 			VacanciesVacanciesResponse vacanciesResponse = response.getBody();
 			if (vacanciesResponse != null) {
 				return vacancyMapper.toVacanciesDTO(vacanciesResponse);
@@ -105,6 +110,9 @@ public class VacancyService {
 	}
 
 	public Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
+		if (selectedTariff.getExpiresAt().isBefore(LocalDate.now())) {
+			return 0;
+		}
 		Integer maxResponses = selectedTariff.getMaxResponses();
 		Integer spentResponses = selectedTariff.getSpentResponses();
 		Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
@@ -136,6 +144,11 @@ public class VacancyService {
 		AvailableVacanciesResponse response = new AvailableVacanciesResponse();
 		UserInfo userInfo = getUserInfoWithTariffAndResumes();
 		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
+		if (selectedTariff == null) {
+			response.setVacancyIds(Collections.emptyList());
+			response.setVacanciesCount(0);
+			return response;
+		}
 		Integer responsesCount = getResponsesCount(selectedTariff, userInfo);
 		log.info("Total responses count: {} for resume: {}", responsesCount, resumeId);
 		if (responsesCount <= 0) {
@@ -174,7 +187,14 @@ public class VacancyService {
 		vacancyProcessingState.setUpdatedAt(LocalDateTime.now());
 		vacancyProcessingStateRepository.save(vacancyProcessingState);
 
-		String accessToken = getAccessToken();
+		VacancyProcessingStateDTO vacancyProcessingStateDTO = new VacancyProcessingStateDTO();
+		vacancyProcessingStateDTO.setId(processId);
+		vacancyProcessingStateDTO.setStatus(VacancyProcessingState.Status.PROCESS);
+		vacancyProcessingStateDTO.setResumeId(resumeId);
+
+		vacancyProcessingStateCache.put(processId, vacancyProcessingStateDTO);
+
+		String accessToken = userInfo.getAccessToken();
 		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, userInfo.getPhone(),
 				userInfo.getEmail(), selectedTariff.getId(), request.getVacancyIds(), accessToken);
 		applicationEventPublisher.publishEvent(event);
@@ -241,23 +261,65 @@ public class VacancyService {
 				.orElse(null);
 	}
 
-	private String getAccessToken() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+	@Transactional
+	public ApplyStatusResponse putApplyVacancyStatus(String processId, VacancyStatusRequest vacancyStatusRequest) {
+		VacancyProcessingStateDTO vacancyProcessingStateDTO = getVacancyProcessingState(processId);
+		VacancyProcessingState state = vacancyProcessingStateRepository.findById(processId)
+				.orElseThrow(() -> new IllegalArgumentException("Process not found"));
+		state.setStatus(vacancyStatusRequest.getStatus());
+		vacancyProcessingStateRepository.save(state);
+		vacancyProcessingStateDTO.setStatus(vacancyStatusRequest.getStatus());
+		vacancyProcessingStateCache.put(processId, vacancyProcessingStateDTO);
 
-		if (authentication == null) {
-			return null;
+		UserInfo userInfo = userStateService.getUserInfoWithTariffAndResumes();
+		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
+		if (selectedTariff == null) {
+			throw new TariffException("Не найден активный тариф для пользователя " + userInfo.getId());
 		}
-		OAuth2AuthorizeRequest request = OAuth2AuthorizeRequest
-				.withClientRegistrationId("hh")
-				.principal(authentication)
-				.build();
+		if (vacancyStatusRequest.getStatus() == VacancyProcessingState.Status.COMPLETED) {
+			saveCompletedProcess(selectedTariff, vacancyProcessingStateDTO.getApplyVacanciesCount(), state, processId);
+		} else if (vacancyProcessingStateDTO.getStatus() == VacancyProcessingState.Status.PROCESS) {
+			UserInfoDTO userInfoDTO = userStateService.getUserInfoDTO(userInfo);
+			ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, vacancyStatusRequest.getResumeId(), userInfoDTO.getPhone(),
+					userInfoDTO.getEmail(), selectedTariff.getId(), vacancyStatusRequest.getVacancyIds(), userInfo.getAccessToken());
+			applicationEventPublisher.publishEvent(event);
+		}
 
-		OAuth2AuthorizedClient client = clientManager.authorize(request);
+		ApplyStatusResponse response = new ApplyStatusResponse();
+		response.setProcessId(processId);
+		response.setAppliedVacancies(state.getAppliedVacancies());
+		response.setStatus(state.getStatus());
+		return response;
+	}
+	private void saveCompletedProcess(SelectedTariff selectedTariff, int applyVacanciesCount, VacancyProcessingState state, String processId) {
+		Integer spentResponses = selectedTariff.getSpentResponses();
+		selectedTariff.setSpentResponses(spentResponses + applyVacanciesCount);
+		selectedTariffRepository.save(selectedTariff);
 
-		return client != null ? client.getAccessToken().getTokenValue() : null;
+		state.setStatus(VacancyProcessingState.Status.COMPLETED);
+		state.setAppliedVacancies(applyVacanciesCount);
+		state.setAppliedDate(LocalDate.now());
+		vacancyProcessingStateRepository.save(state);
+		vacancyProcessingStateCache.invalidate(processId);
 	}
 
-	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage, SettingsDTO settings) {
+
+	private VacancyProcessingStateDTO getVacancyProcessingState(String processId) {
+		VacancyProcessingStateDTO vacancyProcessingStateDTO = vacancyProcessingStateCache.getIfPresent(processId);
+		if (vacancyProcessingStateDTO == null) {
+			VacancyProcessingState state = vacancyProcessingStateRepository.findById(processId)
+					.orElseThrow(() -> new IllegalArgumentException("Process not found " + processId));
+			vacancyProcessingStateDTO = new VacancyProcessingStateDTO();
+			vacancyProcessingStateDTO.setId(state.getId());
+			vacancyProcessingStateDTO.setStatus(state.getStatus());
+			vacancyProcessingStateDTO.setResumeId(state.getResumeId());
+			vacancyProcessingStateCache.put(processId, vacancyProcessingStateDTO);
+			return vacancyProcessingStateDTO;
+		}
+		return vacancyProcessingStateDTO;
+	}
+
+	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage, SettingsDTO settings, String accessToken) {
 		String text = null;
 		String experience = null;
 		String employment = null;
@@ -283,6 +345,7 @@ public class VacancyService {
 		return resumesApi.getVacanciesSimilarToResume(
 				resumeId,
 				DEFAULT_USER_AGENT,
+				"Bearer " + accessToken,
 				page,
 				perPage,
 				text,
@@ -321,10 +384,11 @@ public class VacancyService {
 		);
 	}
 
-	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage) {
+	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage, String accessToken) {
 		return resumesApi.getVacanciesSimilarToResume(
 				resumeId,
 				DEFAULT_USER_AGENT,
+				"Bearer " + accessToken,
 				page,
 				perPage,
 				null,
