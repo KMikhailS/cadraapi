@@ -23,13 +23,14 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import ru.brobrocode.cadra.client.config.HhApiFeignConfiguration;
 import ru.brobrocode.cadra.client.model.ErrorsCommonBadAuthorizationErrors;
 import ru.brobrocode.cadra.client.model.VacanciesVacancyConditions;
 
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 @Validated
 @Tag(name = "Управление вакансиями", description = "Методы для работы с вакансиями от имени менеджера работодателя. ## Восстановление вакансии из архива  Для восстановления вакансии необходимо использовать метод публикации и руководствоваться правилом использования параметра previous_id, описанным в [методе](#previous_id) ")
-@FeignClient(name = "hh-api", url = "${hh.api.base-url}")
+@FeignClient(name = "hh-api", url = "${hh.api.base-url}", configuration = HhApiFeignConfiguration.class)
 public interface VacancyConditionsApi {
 
     /**

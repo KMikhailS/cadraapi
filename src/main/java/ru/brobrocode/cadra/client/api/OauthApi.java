@@ -20,7 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import ru.brobrocode.cadra.client.config.CoreFeignConfiguration;
+import ru.brobrocode.cadra.client.config.HhApiFeignConfiguration;
 import ru.brobrocode.cadra.client.model.AuthUserToken;
 import ru.brobrocode.cadra.client.model.AuthUserTokenAndAppToken;
 import ru.brobrocode.cadra.client.model.ErrorsCommonBadAuthorizationBadParameters;
@@ -29,8 +29,8 @@ import ru.brobrocode.cadra.client.model.ErrorsCommonBadAuthorizationErrors;
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 @Validated
 @Tag(name = "Авторизация приложения", description = "Токен приложения необходимо сгенерировать 1 раз. В случае, если токен был скомпрометирован, его нужно запросить еще раз. При этом ранее выданный токен отзывается. Владелец приложения может посмотреть актуальный `access_token` для приложения на сайте [https://dev.hh.ru/admin](https://dev.hh.ru/admin). В случае, если вы еще ни разу [не получали токен приложения](#section/Avtorizaciya/Avtorizaciya-prilozheniya), токен отображаться не будет.  <a name=\"get-client-token\"></a> ### Получение токена приложения Для получения `access_token` необходимо сделать запрос:  ``` POST https://api.hh.ru/token ```  (старый запрос `POST https://hh.ru/oauth/token` считается устаревшим)  В теле запроса необходимо передать [дополнительные параметры](#required_parameters). Тело запроса необходимо передавать в стандартном `application/x-www-form-urlencoded` с указанием соответствующего заголовка `Content-Type`.  Данный `access_token` имеет **неограниченный** срок жизни. При повторном запросе ранее выданный токен отзывается и выдается новый. Запрашивать `access_token` можно не чаще, чем один раз в 5 минут ")
-@FeignClient(name = "hh-api", url = "${hh.api.base-url}", configuration = CoreFeignConfiguration.class)
-//@FeignClient(name = "hh-api", url = "http://localhost:9000", configuration = CoreFeignConfiguration.class)
+@FeignClient(name = "hh-api", url = "${hh.api.base-url}", configuration = HhApiFeignConfiguration.class)
+//@FeignClient(name = "hh-api", url = "http://localhost:9000", configuration = HhApiFeignConfiguration.class)
 public interface OauthApi {
 
     /**

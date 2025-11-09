@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import ru.brobrocode.cadra.client.config.HhApiFeignConfiguration;
 import ru.brobrocode.cadra.client.model.ErrorsCommonBadAuthorizationErrors;
 import ru.brobrocode.cadra.client.model.ErrorsCommonBadRequestBadArgumentBadRequestAndBadArgumentErrors;
 import ru.brobrocode.cadra.client.model.MeProfile;
@@ -30,7 +31,7 @@ import ru.brobrocode.cadra.client.model.MeProfile;
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 @Validated
 @Tag(name = "Информация о соискателе", description = "Методы для просмотра информации об авторизованном соискателе")
-@FeignClient(name = "hh-api", url = "${hh.api.base-url}")
+@FeignClient(name = "hh-api", url = "${hh.api.base-url}", configuration = HhApiFeignConfiguration.class)
 public interface MeApi {
 
     /**

@@ -28,10 +28,12 @@ import ru.brobrocode.cadra.client.model.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+import ru.brobrocode.cadra.client.config.HhApiFeignConfiguration;
+
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 @Validated
 @Tag(name = "Менеджеры работодателя", description = "Методы для работы с менеджерами работодателя")
-@FeignClient(name = "hh-api", url = "${hh.api.base-url}")
+@FeignClient(name = "hh-api", url = "${hh.api.base-url}", configuration = HhApiFeignConfiguration.class)
 public interface EmployersApi {
 
     /**

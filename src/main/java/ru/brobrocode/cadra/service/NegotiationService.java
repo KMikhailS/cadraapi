@@ -81,6 +81,7 @@ public class NegotiationService {
 
                 if (response.getStatusCode().is2xxSuccessful()) {
                     NegotiationsListResponse negotiationsResponse = response.getBody();
+                    log.info("Negotiations response: {}", negotiationsResponse);
                     if (negotiationsResponse == null ||
                             negotiationsResponse.getItems() == null ||
                             negotiationsResponse.getItems().isEmpty()) {

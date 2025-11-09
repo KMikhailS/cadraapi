@@ -35,15 +35,30 @@ public class CustomErrorDecoder implements ErrorDecoder {
 				ErrorResponse errorResponse = objectMapper.readValue(responseBody, ErrorResponse.class);
 
 				if (isTokenExpiredError(errorResponse)) {
-					log.info("Token expired, attempting to refresh for method: {}", methodKey);
+					log.warn("Token expired detected for method: {} | Request ID: {} | OAuth Error: {}",
+							methodKey,
+							errorResponse.getRequestId(),
+							errorResponse.getOauthError());
 
-					authService.refreshToken();
-					log.info("Token refreshed successfully");
+					try {
+						authService.refreshToken();
+						log.info("Token refreshed successfully for method: {} | Request ID: {}",
+								methodKey, errorResponse.getRequestId());
 
-					return new TokenExpiredException("Token expired and refreshed, retry request");
+						return new TokenExpiredException("Token expired and refreshed, retry request");
+					} catch (Exception e) {
+						log.error("Token refresh failed for method: {} | Request ID: {} | Error: {}",
+								methodKey, errorResponse.getRequestId(), e.getMessage(), e);
+						throw e;
+					}
+				} else {
+					log.warn("403 Forbidden but not token expiration for method: {} | Request ID: {} | Description: {}",
+							methodKey, errorResponse.getRequestId(), errorResponse.getDescription());
 				}
+			} catch (TokenExpiredException e) {
+				throw e;
 			} catch (IOException e) {
-				log.error("Error parsing 403 response", e);
+				log.error("Failed to parse 403 response for method: {}", methodKey, e);
 			}
 		}
 		return new Default().decode(methodKey, response);

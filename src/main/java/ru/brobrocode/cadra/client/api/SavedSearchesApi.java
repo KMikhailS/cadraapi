@@ -24,10 +24,12 @@ import ru.brobrocode.cadra.client.model.*;
 
 import java.math.BigDecimal;
 
+import ru.brobrocode.cadra.client.config.HhApiFeignConfiguration;
+
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 @Validated
 @Tag(name = "Сохраненные поиски резюме", description = "Сохраненный поиск (автопоиск) — это сохраненный набор параметров поиска, по которому можно отслеживать новые резюме по заданному запросу. Помимо сохранения параметров поисковых запросов, автопоиск позволяет получать оповещения о новых результатах поиска. Для удобства автопоиску можно задавать имя")
-@FeignClient(name = "hh-api", url = "${hh.api.base-url}")
+@FeignClient(name = "hh-api", url = "${hh.api.base-url}", configuration = HhApiFeignConfiguration.class)
 public interface SavedSearchesApi {
 
     /**

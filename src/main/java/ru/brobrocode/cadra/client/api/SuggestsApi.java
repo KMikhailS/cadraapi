@@ -23,12 +23,13 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import ru.brobrocode.cadra.client.config.HhApiFeignConfiguration;
 import ru.brobrocode.cadra.client.model.*;
 
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 @Validated
 @Tag(name = "Подсказки", description = "Методы для получения справочной информации в виде списка, элементы которого частично или полностью могут совпадать со значением, отправленным в одном из параметров")
-@FeignClient(name = "hh-api", url = "${hh.api.base-url}")
+@FeignClient(name = "hh-api", url = "${hh.api.base-url}", configuration = HhApiFeignConfiguration.class)
 public interface SuggestsApi {
 
     /**

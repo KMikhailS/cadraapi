@@ -91,7 +91,9 @@ public class YuKassaService {
 		String idempotenceKey = UUID.randomUUID().toString();
 
 		try {
+			log.info("Create payment request: {}", request);
 			PaymentResponse paymentResponse = yuKassaClient.createPayment(idempotenceKey, request);
+			log.info("Create payment response: {}", paymentResponse);
 			savePayment(paymentResponse, userInfo.getId());
 			return paymentResponse;
 		} catch (Exception e) {

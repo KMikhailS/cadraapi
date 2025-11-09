@@ -53,6 +53,7 @@ public class VacancyService {
 			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, settingsDTO, accessToken);
 			VacanciesVacanciesResponse vacanciesResponse = response.getBody();
 			if (vacanciesResponse != null) {
+				log.info("Found {} vacancies for user {}", vacanciesResponse.getItems().size(), userInfo.getId());
 				return vacanciesResponse.getFound();
 			}
 			return null;
@@ -69,6 +70,7 @@ public class VacancyService {
 			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, accessToken);
 			VacanciesVacanciesResponse vacanciesResponse = response.getBody();
 			if (vacanciesResponse != null) {
+				log.info("Found {} vacancies for user {}", vacanciesResponse.getItems().size(), userInfo.getId());
 				return vacancyMapper.toVacanciesDTO(vacanciesResponse);
 			}
 			return null;

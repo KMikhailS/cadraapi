@@ -12,6 +12,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 import ru.brobrocode.cadra.client.api.OauthApi;
 
+/**
+ * Legacy Feign configuration class.
+ * This class is no longer used by HH API clients.
+ * All HH API clients now use {@link HhApiFeignConfiguration} instead.
+ *
+ * @deprecated Use {@link HhApiFeignConfiguration} for all HH API clients
+ */
+@Deprecated
 public class CoreFeignConfiguration {
 
 	@Value("${feign.client.config.default.connectTimeout:30000}")

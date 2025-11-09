@@ -14,12 +14,14 @@ COPY src ./src
 RUN gradle clean build --no-daemon --no-watch-fs
 
 # Финальный образ
-FROM openjdk:21-jdk-slim
+#FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-alpine
 
 WORKDIR /app
 
-# Создаем пользователя для безопасности
-RUN groupadd -r cadra && useradd -r -g cadra cadra
+# Устанавливаем необходимые пакеты и создаем пользователя
+RUN apk add --no-cache curl && \
+    addgroup -S cadra && adduser -S -G cadra cadra
 
 # Копируем собранный jar из стадии сборки
 COPY --from=build /app/build/libs/*.jar app.jar

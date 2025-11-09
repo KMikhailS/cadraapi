@@ -90,6 +90,7 @@ public class UserStateService {
 				DEFAULT_HOST);
 		if (currentUserInfo.getStatusCode().is2xxSuccessful()) {
 			MeProfile meProfile = currentUserInfo.getBody();
+			log.info("Current user info: {}", meProfile);
 			if (meProfile instanceof MeManagerProfile) {
 				userInfoDTO.setMessage("Ваш статус на hh.ru работодатель. Чтобы пользоваться сервисом поменяйте статус на соискатель");
 			} else if (meProfile instanceof MeApplicantProfile applicant) {
