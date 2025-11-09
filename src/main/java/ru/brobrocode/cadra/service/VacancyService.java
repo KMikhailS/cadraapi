@@ -110,17 +110,17 @@ public class VacancyService {
 	}
 
 	public Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
-		if (selectedTariff.getExpiresAt().isBefore(LocalDate.now())) {
-			return 0;
-		}
-		Integer maxResponses = selectedTariff.getMaxResponses();
-		Integer spentResponses = selectedTariff.getSpentResponses();
-		Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
-		Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
-		int remainResponses = maxResponses - spentResponses;
-		int availableForToday = maxResponsesPerDay - appliedVacanciesForToday;
+		if (selectedTariff.getExpiresAt().isAfter(LocalDate.now())) {
+			Integer maxResponses = selectedTariff.getMaxResponses();
+			Integer spentResponses = selectedTariff.getSpentResponses();
+			Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
+			Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
+			int remainResponses = maxResponses - spentResponses;
+			int availableForToday = maxResponsesPerDay - appliedVacanciesForToday;
 
-		return Math.min(availableForToday, remainResponses);
+			return Math.min(availableForToday, remainResponses);
+		}
+		return 0;
 	}
 
 	private Integer getAppliedVacanciesForToday(UserInfo userInfo) {
@@ -207,13 +207,33 @@ public class VacancyService {
 
 	public ApplyStatusResponse getApplyVacancyStatus(String processId) {
 		ApplyStatusResponse response = new ApplyStatusResponse();
-		VacancyProcessingState vacancyProcessingState = vacancyProcessingStateRepository.findById(processId).orElse(null);
-		if (vacancyProcessingState == null) {
-			response.setProcessId(processId);
-			response.setMessage("Ошибка процесса отправки резюме. Не найден процесс.");
-			response.setStatus(VacancyProcessingState.Status.ERROR);
-			return response;
+		VacancyProcessingStateDTO state = vacancyProcessingStateCache.getIfPresent(processId);
+		if (state == null) {
+			VacancyProcessingState vacancyProcessingState = vacancyProcessingStateRepository.findById(processId).orElse(null);
+			if (vacancyProcessingState == null) {
+				response.setProcessId(processId);
+				response.setMessage("Ошибка процесса отправки резюме. Не найден процесс.");
+				response.setStatus(VacancyProcessingState.Status.ERROR);
+				return response;
+			} else {
+				state = new VacancyProcessingStateDTO();
+				state.setId(processId);
+				state.setStatus(vacancyProcessingState.getStatus());
+				state.setResumeId(vacancyProcessingState.getResumeId());
+				state.setApplyVacanciesCount(state.getApplyVacanciesCount());
+			}
 		}
+		response.setProcessId(processId);
+		response.setAppliedVacancies(state.getApplyVacanciesCount());
+		response.setStatus(state.getStatus());
+		return response;
+	}
+
+	@Transactional(readOnly = true)
+	public ApplyStatusResponse getFinalVacancyStatus(String processId) {
+		ApplyStatusResponse response = new ApplyStatusResponse();
+		VacancyProcessingState vacancyProcessingState = vacancyProcessingStateRepository.findById(processId)
+				.orElseThrow(() -> new IllegalArgumentException("Process not found " + processId));
 		response.setProcessId(processId);
 		response.setAppliedVacancies(vacancyProcessingState.getAppliedVacancies());
 		response.setStatus(vacancyProcessingState.getStatus());
@@ -264,6 +284,7 @@ public class VacancyService {
 	@Transactional
 	public ApplyStatusResponse putApplyVacancyStatus(String processId, VacancyStatusRequest vacancyStatusRequest) {
 		VacancyProcessingStateDTO vacancyProcessingStateDTO = getVacancyProcessingState(processId);
+		log.info("PUT ApplyVacancyStatus vacancyProcessingStateDTO {}", vacancyProcessingStateDTO);
 		VacancyProcessingState state = vacancyProcessingStateRepository.findById(processId)
 				.orElseThrow(() -> new IllegalArgumentException("Process not found"));
 		state.setStatus(vacancyStatusRequest.getStatus());

@@ -24,7 +24,7 @@ public class CacheConfig {
 	@Bean
 	public Cache<String, VacancyProcessingStateDTO> vacancyProcessingStateCache() {
 		return Caffeine.newBuilder()
-				.expireAfterAccess(120, TimeUnit.MINUTES)
+				.expireAfterAccess(72, TimeUnit.HOURS)
 				.build();
 	}
 }

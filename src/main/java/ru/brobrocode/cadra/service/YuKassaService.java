@@ -42,14 +42,22 @@ public class YuKassaService {
 		metaData.put("tariffId", tariff.getId());
 
 		// Формирование чека для 54-ФЗ
-		String customerEmail = createPaymentRequest.getEmail() != null
-				? createPaymentRequest.getEmail()
-				: userInfo.getEmail();
+		String customerEmail = createPaymentRequest.getEmail();
+		String phone = createPaymentRequest.getPhone();
+
+		ReceiptCustomer customer;
+		if (customerEmail != null) {
+			customer = ReceiptCustomer.builder()
+					.email(customerEmail)
+					.build();
+		} else {
+			customer = ReceiptCustomer.builder()
+					.phone(phone)
+					.build();
+		}
 
 		Receipt receipt = Receipt.builder()
-				.customer(ReceiptCustomer.builder()
-						.email(customerEmail)
-						.build())
+				.customer(customer)
 				.items(java.util.Collections.singletonList(
 						ReceiptItem.builder()
 								.description(description)

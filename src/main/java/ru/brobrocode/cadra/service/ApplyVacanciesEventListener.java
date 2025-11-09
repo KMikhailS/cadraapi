@@ -63,22 +63,20 @@ public class ApplyVacanciesEventListener {
 			log.info("ResumeProfile received: {}", resumeProfile);
 			for (String vacancyId : vacancyIds) {
 				VacancyProcessingStateDTO processState = getVacancyProcessingState(processId);
-				if (processState.getStatus() == VacancyProcessingState.Status.STOPPED) {
-					return;
-				} else if (processState.getStatus() == VacancyProcessingState.Status.COMPLETED) {
-					saveCompletedProcess(selectedTariffId, applyVacanciesCount, state, processId);
+				if (processState.getStatus() == VacancyProcessingState.Status.STOPPED
+						|| processState.getStatus() == VacancyProcessingState.Status.COMPLETED) {
 					return;
 				}
 				VacancyItemDTO vacancyItem = getVacancyItem(vacancyId, token);
-//				String coverLetter = gigaChatService.getCoverLetter(resumeProfile, vacancyItem);
-				String coverLetter = "letter";
+				String coverLetter = gigaChatService.getCoverLetter(resumeProfile, vacancyItem);
+//				String coverLetter = "letter";
 				log.info("Cover letter generated: {}", coverLetter);
 				VacancyApplicationRequest request = new VacancyApplicationRequest();
 				request.setResumeId(resumeId);
 				request.setVacancyId(vacancyId);
 				request.setMessage(coverLetter);
-//				boolean isSuccessApplying = applyToVacancy(request, token);
-				boolean isSuccessApplying = applyToVacancy();
+				boolean isSuccessApplying = applyToVacancy(request, token);
+//				boolean isSuccessApplying = applyToVacancy();
 				if (isSuccessApplying) {
 					applyVacanciesCount++;
 				}

@@ -81,4 +81,4 @@ yukassa:
   redirect-url: ${YUKASSA_SHOP_REDIRECT_URL:https://cadra.online}
 
 logging.level.ru.brobrocode.cadra.client.yukassa.YuKassaClient: debug
-feign.client.config.default.logger-level: full
+#feign.client.config.default.logger-level: full
