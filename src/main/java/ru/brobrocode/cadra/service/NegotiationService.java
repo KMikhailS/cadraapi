@@ -52,6 +52,7 @@ public class NegotiationService {
         stats.setNotResponded(notResponded);
         stats.setDiscards(discards);
         stats.setInvites(invites);
+        log.info("Negotiations response {}: ", stats);
 
         return stats;
     }
@@ -81,7 +82,7 @@ public class NegotiationService {
 
                 if (response.getStatusCode().is2xxSuccessful()) {
                     NegotiationsListResponse negotiationsResponse = response.getBody();
-                    log.info("Negotiations response: {}", negotiationsResponse);
+//                    log.info("Negotiations response: {}", negotiationsResponse);
                     if (negotiationsResponse == null ||
                             negotiationsResponse.getItems() == null ||
                             negotiationsResponse.getItems().isEmpty()) {

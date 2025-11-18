@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Generated;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.ToString;
 
 import java.net.URI;
 import java.util.Objects;
@@ -14,7 +15,7 @@ import java.util.Objects;
  */
 
 @Schema(name = "MeApplicantProfile", description = "Профиль текущего пользователя, авторизованного как соискатель")
-
+@ToString
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 public class MeApplicantProfile extends MeAnyUserProfile implements MeProfile {
 

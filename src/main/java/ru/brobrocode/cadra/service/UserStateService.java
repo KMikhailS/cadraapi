@@ -90,7 +90,7 @@ public class UserStateService {
 				DEFAULT_HOST);
 		if (currentUserInfo.getStatusCode().is2xxSuccessful()) {
 			MeProfile meProfile = currentUserInfo.getBody();
-			log.info("Current user info: {}", meProfile);
+//			log.info("Current user info: {}", meProfile);
 			if (meProfile instanceof MeManagerProfile) {
 				userInfoDTO.setMessage("Ваш статус на hh.ru работодатель. Чтобы пользоваться сервисом поменяйте статус на соискатель");
 			} else if (meProfile instanceof MeApplicantProfile applicant) {
@@ -100,6 +100,7 @@ public class UserStateService {
 				userInfoDTO.setLastName(applicant.getLastName());
 				userInfoDTO.setMiddleName(applicant.getMiddleName());
 				userInfoDTO.setShowOnboarding(userInfo.getShowOnboarding());
+				log.info("Current user info: {}", userInfoDTO);
 			}
 		}
 		return userInfoDTO;

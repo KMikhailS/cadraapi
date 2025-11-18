@@ -5,9 +5,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import ru.brobrocode.cadra.dto.ResumeProfileDTO;
 import ru.brobrocode.cadra.dto.UserInfoDTO;
+import ru.brobrocode.cadra.dto.VacancyItemDTO;
 import ru.brobrocode.cadra.dto.VacancyProcessingStateDTO;
-import ru.brobrocode.cadra.entity.VacancyProcessingState;
 
 import java.util.concurrent.TimeUnit;
 

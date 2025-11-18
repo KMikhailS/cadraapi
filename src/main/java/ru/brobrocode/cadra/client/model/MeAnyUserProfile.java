@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Generated;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+import lombok.ToString;
 
 import java.util.Objects;
 
@@ -27,7 +28,7 @@ import java.util.Objects;
   @JsonSubTypes.Type(value = MeManagerProfile.class, name = "employer"),
   @JsonSubTypes.Type(value = MeEmployerProfile.class, name = "employer_integration")
 })
-
+@ToString
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
 public class MeAnyUserProfile extends MeAnyProfile {
 
