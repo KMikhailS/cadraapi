@@ -67,6 +67,50 @@ public class UserController {
 		userService.saveResumeSettings(resumeId, settingsDTO);
 	}
 
+	@GetMapping("/users/has-selected-tariffs")
+	@Operation(
+			summary = "Check if user has selected any tariffs",
+			description = "Returns true if the user has selected any tariffs in the past, false otherwise",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							description = "Successfully checked tariff selection status"
+					),
+					@ApiResponse(
+							responseCode = "403",
+							description = "Authentication required"
+					)
+			}
+	)
+	public ResponseEntity<Boolean> hasSelectedTariffs() {
+		boolean hasSelected = userService.hasSelectedTariffs();
+		return ResponseEntity.ok(hasSelected);
+	}
+
+	@PostMapping("/users/activate-promo-tariff")
+	@Operation(
+			summary = "Activate promo tariff for new user",
+			description = "Activates the promo (trial) tariff for the currently authenticated user if they don't have any tariffs selected",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							description = "Successfully activated promo tariff or returned error message"
+					),
+					@ApiResponse(
+							responseCode = "403",
+							description = "Authentication required"
+					),
+					@ApiResponse(
+							responseCode = "500",
+							description = "Internal server error"
+					)
+			}
+	)
+	public ResponseEntity<String> activatePromoTariff() {
+		String message = userService.activatePromoTariff();
+		return ResponseEntity.ok(message);
+	}
+
 //	@GetMapping("/resumes/mine")
 //	@Operation(
 //			summary = "Get current user information",

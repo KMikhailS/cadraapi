@@ -32,6 +32,7 @@ public class CustomErrorDecoder implements ErrorDecoder {
 		if (response.status() == 403) {
 			try {
 				String responseBody = getResponseBody(response);
+				log.info("Response body: {}", responseBody);
 				ErrorResponse errorResponse = objectMapper.readValue(responseBody, ErrorResponse.class);
 
 				if (isTokenExpiredError(errorResponse)) {

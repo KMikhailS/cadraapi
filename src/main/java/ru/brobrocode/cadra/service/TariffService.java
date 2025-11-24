@@ -166,4 +166,9 @@ public class TariffService {
         return tariffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tariff not found with id: " + id));
     }
+
+    public Tariff getByName(String name) {
+        return tariffRepository.findByName(name)
+                .orElseThrow(() -> new RuntimeException("Tariff not found with name: " + name));
+    }
 }

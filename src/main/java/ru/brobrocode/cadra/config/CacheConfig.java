@@ -18,7 +18,7 @@ public class CacheConfig {
 	@Bean
 	public LoadingCache<String, UserInfoDTO> userInfoCache() {
 		return Caffeine.newBuilder()
-				.expireAfterAccess(10, TimeUnit.MINUTES)
+				.expireAfterAccess(1, TimeUnit.MINUTES)
 				.build(key -> new UserInfoDTO());
 	}
 

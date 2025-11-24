@@ -17,6 +17,7 @@ public class UserInfoDTO {
 	private String lastName;
 	private String middleName;
 	private Boolean showOnboarding;
+	private Boolean isAnyTariffSelected;
 	private SelectedTariffDTO selectedTariff;
 	private List<ResumeDTO> resumes;
 	private String message;

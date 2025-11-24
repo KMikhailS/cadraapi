@@ -21,11 +21,13 @@ import ru.brobrocode.cadra.dto.SettingsDTO;
 import ru.brobrocode.cadra.dto.UserInfoDTO;
 import ru.brobrocode.cadra.entity.Resume;
 import ru.brobrocode.cadra.entity.SelectedTariff;
+import ru.brobrocode.cadra.entity.Tariff;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.repository.ResumeRepository;
 import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +48,7 @@ public class UserService {
 	private final ObjectMapper objectMapper;
 	private final OAuth2AuthorizedClientManager clientManager;
 	private final UserStateService userStateService;
+	private final TariffService tariffService;
 
 	public UserInfoDTO getCurrentUser() {
 		UserInfo userInfo = userStateService.getUserInfo();
@@ -56,6 +59,7 @@ public class UserService {
 			saveTokens(userInfo);
 		}
 		UserInfoDTO userInfoDTO = userStateService.getUserInfoDTO(userInfo);
+		userInfoDTO.setIsAnyTariffSelected(isAnyTariffSelected(userInfoDTO.getId()));
 		if (userInfoDTO.getMessage() != null && !userInfoDTO.getMessage().isEmpty()) {
 			return userInfoDTO;
 		}
@@ -212,5 +216,53 @@ public class UserService {
 	private Resume getResumeById(String resumeId) {
 		return resumeRepository.findById(resumeId)
 				.orElseThrow(() -> new IllegalArgumentException("Resume not found"));
+	}
+
+	private void savePromoTariff(UserInfo userInfo) {
+		Tariff promoTariff = tariffService.getByName("Пробный");
+		SelectedTariff selectedTariff = new SelectedTariff();
+		selectedTariff.setTariff(promoTariff);
+		selectedTariff.setUser(userInfo);
+		selectedTariff.setSpentResponses(0);
+		selectedTariff.setMaxResponses(promoTariff.getMaxResponses());
+		selectedTariff.setIsActive(true);
+		selectedTariff.setExpiresAt(LocalDate.now().plusDays(promoTariff.getExpirationDays()));
+		selectedTariff.setCreatedAt(LocalDateTime.now());
+		selectedTariff.setUpdatedAt(LocalDateTime.now());
+		selectedTariff.setMaxResponsesPerDay(promoTariff.getMaxResponsesPerDay());
+		selectedTariff.setIsSendLetter(promoTariff.getIsSendLetter());
+		selectedTariffRepository.save(selectedTariff);
+	}
+
+	private boolean isAnyTariffSelected(String userId) {
+		List<SelectedTariff> tariffs = selectedTariffRepository.findByUserId(userId);
+		return tariffs != null && !tariffs.isEmpty();
+	}
+
+	public boolean hasSelectedTariffs() {
+		UserInfo userInfo = userStateService.getUserInfo();
+		if (userInfo == null) {
+			return false;
+		}
+		return isAnyTariffSelected(userInfo.getId());
+	}
+
+	@Transactional
+	public String activatePromoTariff() {
+		UserInfo userInfo = userStateService.getUserInfo();
+		if (userInfo == null) {
+			throw new RuntimeException("User not found");
+		}
+
+		// Проверяем, выбирал ли пользователь уже какие-либо тарифы
+		if (isAnyTariffSelected(userInfo.getId())) {
+			log.info("User {} already has selected tariffs, promo tariff not available", userInfo.getId());
+			return "Тариф Пробный не доступен";
+		}
+
+		// Активируем пробный тариф
+		log.info("Activating promo tariff for user {}", userInfo.getId());
+		savePromoTariff(userInfo);
+		return null;
 	}
 }
