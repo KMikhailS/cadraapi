@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import ru.brobrocode.cadra.client.api.OauthApi;
 import ru.brobrocode.cadra.client.model.AuthUserToken;
 import ru.brobrocode.cadra.config.exception.RefreshTokenException;
+import ru.brobrocode.cadra.config.exception.TokenNotExpiredException;
 import ru.brobrocode.cadra.entity.UserInfo;
 import ru.brobrocode.cadra.repository.UserInfoRepository;
 
@@ -56,16 +57,24 @@ public class AuthService {
 
 		synchronized (userLock) {
 			try {
-				// Load current OAuth2 client
-				OAuth2AuthorizedClient currentClient = authorizedClientService
-						.loadAuthorizedClient("hh", userId);
+				// Load UserInfo from database to get refresh token
+				UserInfo userInfo = userInfoRepository.findById(userId)
+						.orElseThrow(() -> new RefreshTokenException("User not found in database: " + userId));
 
-				if (currentClient == null || currentClient.getRefreshToken() == null) {
+				if (userInfo.getRefreshToken() == null) {
 					log.error("Token refresh failed for user {}: no refresh token available", userId);
 					throw new RefreshTokenException("No refresh token available for user: " + userId);
 				}
 
-				String refreshTokenValue = currentClient.getRefreshToken().getTokenValue();
+				// Check if token is actually expired
+				if (userInfo.getTokenExpiresAt() != null &&
+					userInfo.getTokenExpiresAt().isAfter(LocalDateTime.now())) {
+					log.warn("Token refresh skipped for user {}: token not yet expired (expires at: {})",
+							userId, userInfo.getTokenExpiresAt());
+					throw new TokenNotExpiredException("Token is still valid, retry with current token");
+				}
+
+				String refreshTokenValue = userInfo.getRefreshToken();
 				log.debug("Requesting new token pair from HH API for user: {}", userId);
 
 				// Request new token pair from HH API
@@ -95,23 +104,41 @@ public class AuthService {
 						Instant.now()
 				);
 
-				// Update OAuth2AuthorizedClientService (in-memory)
-				OAuth2AuthorizedClient updatedClient = new OAuth2AuthorizedClient(
-						currentClient.getClientRegistration(),
-						currentClient.getPrincipalName(),
-						newAccessToken,
-						newRefreshToken
-				);
-				authorizedClientService.saveAuthorizedClient(updatedClient, authentication);
-				log.debug("Updated OAuth2AuthorizedClient for user: {}", userId);
+				// Load current OAuth2 client to update it with new tokens
+				OAuth2AuthorizedClient currentClient = authorizedClientService
+						.loadAuthorizedClient("hh", userId);
+
+				if (currentClient != null) {
+					// Update OAuth2AuthorizedClientService (in-memory)
+					OAuth2AuthorizedClient updatedClient = new OAuth2AuthorizedClient(
+							currentClient.getClientRegistration(),
+							currentClient.getPrincipalName(),
+							newAccessToken,
+							newRefreshToken
+					);
+					authorizedClientService.saveAuthorizedClient(updatedClient, authentication);
+					log.debug("Updated OAuth2AuthorizedClient for user: {}", userId);
+				} else {
+					log.warn("OAuth2AuthorizedClient not found for user {}, skipping in-memory update", userId);
+				}
 
 				// Update UserInfo in database
-				updateUserInfoTokens(userId, authUserToken);
+				updateUserInfoTokens(userInfo, authUserToken);
 
 				log.info("Token refresh completed successfully for user: {}", userId);
 
 			} catch (RefreshTokenException e) {
 				throw e;
+			} catch (TokenNotExpiredException e) {
+				throw e;
+			} catch (feign.FeignException.BadRequest e) {
+				// Handle "token not expired" error from HH API
+				if (e.getMessage() != null && e.getMessage().contains("token not expired")) {
+					log.warn("HH API returned 'token not expired' for user {}, token is still valid", userId);
+					throw new TokenNotExpiredException("Token is still valid according to HH API, retry with current token");
+				}
+				log.error("Bad request during token refresh for user: {}", userId, e);
+				throw new RefreshTokenException("Token refresh failed for user: " + userId, e);
 			} catch (Exception e) {
 				log.error("Unexpected error during token refresh for user: {}", userId, e);
 				throw new RefreshTokenException("Token refresh failed for user: " + userId, e);
@@ -125,27 +152,32 @@ public class AuthService {
 	/**
 	 * Updates access token and refresh token in UserInfo database.
 	 *
-	 * @param userId user ID
+	 * @param userInfo user entity to update
 	 * @param authUserToken new token data from HH API
 	 */
-	private void updateUserInfoTokens(String userId, AuthUserToken authUserToken) {
+	private void updateUserInfoTokens(UserInfo userInfo, AuthUserToken authUserToken) {
 		try {
-			UserInfo userInfo = userInfoRepository.findById(userId)
-					.orElseThrow(() -> new RefreshTokenException("User not found in database: " + userId));
-
-			log.debug("Updating tokens in database for user: {}", userId);
+			log.debug("Updating tokens in database for user: {}", userInfo.getId());
 
 			userInfo.setAccessToken(authUserToken.getAccessToken());
 			userInfo.setRefreshToken(authUserToken.getRefreshToken());
+
+			// Calculate and save token expiration time
+			if (authUserToken.getExpiresIn() != null) {
+				LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(authUserToken.getExpiresIn());
+				userInfo.setTokenExpiresAt(expiresAt);
+				log.debug("Token expiration time set to: {} for user: {}", expiresAt, userInfo.getId());
+			}
+
 			userInfo.setUpdatedAt(LocalDateTime.now());
 
 			userInfoRepository.save(userInfo);
 
-			log.info("Successfully updated tokens in database for user: {}", userId);
+			log.info("Successfully updated tokens in database for user: {}", userInfo.getId());
 
 		} catch (Exception e) {
-			log.error("Failed to update tokens in database for user: {}", userId, e);
-			throw new RefreshTokenException("Failed to persist tokens to database for user: " + userId, e);
+			log.error("Failed to update tokens in database for user: {}", userInfo.getId(), e);
+			throw new RefreshTokenException("Failed to persist tokens to database for user: " + userInfo.getId(), e);
 		}
 	}
 }

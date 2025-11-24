@@ -50,6 +50,7 @@ public class UserService {
 	private final UserStateService userStateService;
 	private final TariffService tariffService;
 
+	@Transactional
 	public UserInfoDTO getCurrentUser() {
 		UserInfo userInfo = userStateService.getUserInfo();
 		if (userInfo == null) {
@@ -80,6 +81,7 @@ public class UserService {
 		selectedTariffDTO.setSpentResponses(selectedTariff.getSpentResponses());
 		Integer availableVacanciesForToday = vacancyService.getResponsesCount(selectedTariff, userInfo);
 		selectedTariffDTO.setAvailableVacanciesForToday(availableVacanciesForToday);
+		selectedTariffDTO.setIsActive(selectedTariff.getIsActive());
 		userInfoDTO.setSelectedTariff(selectedTariffDTO);
 	}
 
@@ -144,7 +146,15 @@ public class UserService {
 	}
 
 	public SelectedTariff getSelectedTariff(String userId) {
-		return selectedTariffRepository.findByUserIdAndIsActive(userId, true).orElse(null);
+		SelectedTariff selectedTariff = selectedTariffRepository.findByUserIdAndIsActive(userId, true).orElse(null);
+		if (selectedTariff != null) {
+			log.info("Selected tariff: {} for user {}", selectedTariff.getTariff().getName(), userId);
+			if (selectedTariff.getExpiresAt().isBefore(LocalDate.now())) {
+				selectedTariff.setIsActive(false);
+				selectedTariffRepository.save(selectedTariff);
+			}
+		}
+		return selectedTariff;
 	}
 
 	private String saveResume(ResumesMineItem resumeItem, UserInfo userInfo) {

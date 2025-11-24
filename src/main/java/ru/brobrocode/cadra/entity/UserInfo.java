@@ -51,6 +51,9 @@ public class UserInfo {
 	@Column(name = "refresh_token")
 	private String refreshToken;
 
+	@Column(name = "token_expires_at")
+	private LocalDateTime tokenExpiresAt;
+
 	@Column(name = "show_onboarding")
 	private Boolean showOnboarding;
 

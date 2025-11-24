@@ -75,8 +75,8 @@ public class ApplyVacanciesEventListener {
 				request.setResumeId(resumeId);
 				request.setVacancyId(vacancyId);
 				request.setMessage(coverLetter);
+//				boolean isSuccessApplying = applyToVacancy(request, token);
 				boolean isSuccessApplying = applyToVacancy();
-//				boolean isSuccessApplying = applyToVacancy();
 				if (isSuccessApplying) {
 					applyVacanciesCount++;
 				}
@@ -182,7 +182,7 @@ public class ApplyVacanciesEventListener {
 
 	public boolean applyToVacancy() {
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(3000);
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}

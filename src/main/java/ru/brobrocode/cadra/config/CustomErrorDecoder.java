@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.brobrocode.cadra.config.dto.ErrorResponse;
 import ru.brobrocode.cadra.config.exception.TokenExpiredException;
+import ru.brobrocode.cadra.config.exception.TokenNotExpiredException;
 import ru.brobrocode.cadra.service.AuthService;
 
 import java.io.IOException;
@@ -47,6 +48,10 @@ public class CustomErrorDecoder implements ErrorDecoder {
 								methodKey, errorResponse.getRequestId());
 
 						return new TokenExpiredException("Token expired and refreshed, retry request");
+					} catch (TokenNotExpiredException e) {
+						log.info("Token not expired for method: {} | Request ID: {}, retrying with current token",
+								methodKey, errorResponse.getRequestId());
+						return new TokenExpiredException("Token is still valid, retry request with current token");
 					} catch (Exception e) {
 						log.error("Token refresh failed for method: {} | Request ID: {} | Error: {}",
 								methodKey, errorResponse.getRequestId(), e.getMessage(), e);
