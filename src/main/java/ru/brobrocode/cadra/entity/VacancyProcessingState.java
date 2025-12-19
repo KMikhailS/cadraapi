@@ -35,6 +35,9 @@ public class VacancyProcessingState {
 	@Column(name = "applied_date")
 	private LocalDate appliedDate;
 
+	@Column(name = "processed_vacancy_ids", columnDefinition = "TEXT")
+	private String processedVacancyIds;
+
 	@Column(name = "created_at", nullable = false)
 	@CreatedDate
 	private LocalDateTime createdAt = LocalDateTime.now();

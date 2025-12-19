@@ -117,8 +117,10 @@ public class VacancyService {
 			Integer spentResponses = selectedTariff.getSpentResponses();
 			Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
 			Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
+			log.info("Applied vacancies for today {}", appliedVacanciesForToday);
 			int remainResponses = maxResponses - spentResponses;
 			int availableForToday = maxResponsesPerDay - appliedVacanciesForToday;
+			log.info("Available for today {}", availableForToday);
 
 			return Math.min(availableForToday, remainResponses);
 		}
@@ -132,11 +134,16 @@ public class VacancyService {
 			List<String> resumeIds = resumes.stream()
 					.map(Resume::getId)
 					.toList();
-			return vacancyProcessingStateRepository
+			int completedProcesses = vacancyProcessingStateRepository
 					.findAllByResumeIdInAndStatusAndAppliedDate(resumeIds, VacancyProcessingState.Status.COMPLETED, now)
 					.stream()
 					.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
 					.sum();
+			int stoppedProcesses = vacancyProcessingStateRepository.findAllByResumeIdInAndStatus(resumeIds, VacancyProcessingState.Status.STOPPED)
+					.stream()
+					.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
+					.sum();
+			return completedProcesses + stoppedProcesses;
 		}
 		return 0;
 	}
@@ -152,6 +159,9 @@ public class VacancyService {
 			return response;
 		}
 		Integer responsesCount = getResponsesCount(selectedTariff, userInfo);
+		if (responsesCount < 0) {
+			responsesCount = 0;
+		}
 		log.info("Total responses count: {} for resume: {}", responsesCount, resumeId);
 		if (responsesCount <= 0) {
 			response.setVacancyIds(Collections.emptyList());
@@ -180,6 +190,13 @@ public class VacancyService {
 		if (selectedTariff == null) {
 			throw new TariffException("Не найден активный тариф для пользователя " + userInfo.getId());
 		}
+		ApplyVacanciesResponse applyVacanciesResponse = new ApplyVacanciesResponse();
+		List<VacancyProcessingState> states =
+				vacancyProcessingStateRepository.findAllByResumeIdAndStatus(resumeId, VacancyProcessingState.Status.PROCESS);
+		if (states != null && !states.isEmpty()) {
+			applyVacanciesResponse.setMessage("У вас уже есть запущенный процесс отправки откликов");
+			return applyVacanciesResponse;
+		}
 		VacancyProcessingState vacancyProcessingState = new VacancyProcessingState();
 		String processId = UUID.randomUUID().toString();
 		vacancyProcessingState.setId(processId);
@@ -201,7 +218,6 @@ public class VacancyService {
 				userInfo.getEmail(), selectedTariff.getId(), request.getVacancyIds(), accessToken);
 		applicationEventPublisher.publishEvent(event);
 
-		ApplyVacanciesResponse applyVacanciesResponse = new ApplyVacanciesResponse();
 		applyVacanciesResponse.setProcessId(processId);
 
 		return applyVacanciesResponse;
@@ -222,12 +238,14 @@ public class VacancyService {
 				state.setId(processId);
 				state.setStatus(vacancyProcessingState.getStatus());
 				state.setResumeId(vacancyProcessingState.getResumeId());
-				state.setApplyVacanciesCount(state.getApplyVacanciesCount());
+				state.setApplyVacanciesCount(vacancyProcessingState.getAppliedVacancies() != null ? vacancyProcessingState.getAppliedVacancies() : 0);
+				state.setProcessedVacancyIds(vacancyProcessingState.getProcessedVacancyIds());
 			}
 		}
 		response.setProcessId(processId);
 		response.setAppliedVacancies(state.getApplyVacanciesCount());
 		response.setStatus(state.getStatus());
+		response.setProcessedVacancyIds(state.getProcessedVacancyIds());
 		return response;
 	}
 
@@ -336,6 +354,7 @@ public class VacancyService {
 			vacancyProcessingStateDTO.setId(state.getId());
 			vacancyProcessingStateDTO.setStatus(state.getStatus());
 			vacancyProcessingStateDTO.setResumeId(state.getResumeId());
+			vacancyProcessingStateDTO.setProcessedVacancyIds(state.getProcessedVacancyIds());
 			vacancyProcessingStateCache.put(processId, vacancyProcessingStateDTO);
 			return vacancyProcessingStateDTO;
 		}

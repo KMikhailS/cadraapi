@@ -15,4 +15,5 @@ public class ApplyStatusResponse {
 	private String message;
 	private Integer appliedVacancies;
 	private VacancyProcessingState.Status status;
+	private String processedVacancyIds;
 }

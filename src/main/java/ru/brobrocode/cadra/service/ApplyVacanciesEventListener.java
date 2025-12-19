@@ -1,7 +1,6 @@
 package ru.brobrocode.cadra.service;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
@@ -24,7 +23,10 @@ import ru.brobrocode.cadra.repository.SelectedTariffRepository;
 import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static ru.brobrocode.cadra.constants.HHApiConstants.*;
 
@@ -38,7 +40,7 @@ public class ApplyVacanciesEventListener {
 	private final ResumeProfileApi resumeProfileApi;
 	private final VacanciesApi vacanciesApi;
 	private final SelectedTariffRepository selectedTariffRepository;
-	private final GigaChatService gigaChatService;
+	private final ChatModelService chatModelService;
 	private final Cache<String, VacancyProcessingStateDTO> vacancyProcessingStateCache;
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -56,48 +58,81 @@ public class ApplyVacanciesEventListener {
 		VacancyProcessingStateDTO vacancyProcessingState = getVacancyProcessingState(processId);
 		VacancyProcessingState state = vacancyProcessingStateRepository.findById(processId)
 				.orElseThrow(() -> new IllegalArgumentException("Process not found " + processId));
-		log.info("vacancyProcessingState received: {}", vacancyProcessingState);
+		log.info(">>>>> vacancyProcessingState received: {}", vacancyProcessingState);
 		int applyVacanciesCount = vacancyProcessingState.getApplyVacanciesCount();
+
+		// Получить список уже обработанных ID вакансий
+		Set<String> processedIds = new HashSet<>();
+		String processedIdsStr = state.getProcessedVacancyIds();
+		if (processedIdsStr != null && !processedIdsStr.isEmpty()) {
+			processedIds.addAll(Arrays.asList(processedIdsStr.split(",")));
+		}
+		log.info("Already processed {} vacancies: {}", processedIds.size(), processedIds);
+
+		ResumeProfileDTO resumeProfile;
 		try {
-			ResumeProfileDTO resumeProfile = getResumeProfile(resumeId, phone, email, token);
+			resumeProfile = getResumeProfile(resumeId, phone, email, token);
 			log.info("ResumeProfile received: {}", resumeProfile);
-			for (String vacancyId : vacancyIds) {
+		} catch (Exception e) {
+			log.error("Fatal error: failed to get resume profile. Aborting process.", e);
+			handleFatalError(selectedTariffId, applyVacanciesCount, state, processId);
+			return;
+		}
+
+		log.info("Processing {} vacancies, starting from count: {}", vacancyIds.size(), applyVacanciesCount);
+
+		for (String vacancyId : vacancyIds) {
+			// Пропустить уже обработанные вакансии
+			if (processedIds.contains(vacancyId)) {
+				log.info("Vacancy {} already processed, skipping", vacancyId);
+				continue;
+			}
+
+			try {
+				// Получаем свежее состояние из кэша перед каждой итерацией
 				VacancyProcessingStateDTO processState = getVacancyProcessingState(processId);
+				log.info(">>>>> vacancyProcessingState process: {}", processState);
 				if (processState.getStatus() == VacancyProcessingState.Status.STOPPED
 						|| processState.getStatus() == VacancyProcessingState.Status.COMPLETED) {
+					log.info("Process stopped or completed, exiting loop. Final count: {}", applyVacanciesCount);
 					return;
 				}
+
 				VacancyItemDTO vacancyItem = getVacancyItem(vacancyId, token);
-				String coverLetter = gigaChatService.getCoverLetter(resumeProfile, vacancyItem);
+				String coverLetter = chatModelService.getCoverLetter(resumeProfile, vacancyItem);
 //				String coverLetter = "letter";
 				log.info("Cover letter generated: {}", coverLetter);
 				VacancyApplicationRequest request = new VacancyApplicationRequest();
 				request.setResumeId(resumeId);
 				request.setVacancyId(vacancyId);
 				request.setMessage(coverLetter);
-//				boolean isSuccessApplying = applyToVacancy(request, token);
-				boolean isSuccessApplying = applyToVacancy();
+				boolean isSuccessApplying = applyToVacancy(request, token);
+//				boolean isSuccessApplying = applyToVacancy();
 				if (isSuccessApplying) {
 					applyVacanciesCount++;
-				}
-				processState.setApplyVacanciesCount(applyVacanciesCount);
-				vacancyProcessingStateCache.put(processId, processState);
-			}
-			saveCompletedProcess(selectedTariffId, applyVacanciesCount, state, processId);
-		} catch (Exception e) {
-			log.error("Error processing vacancy", e);
-			SelectedTariff selectedTariff = selectedTariffRepository.findById(selectedTariffId)
-					.orElseThrow(() -> new IllegalStateException("Can't find selected tariff with id: " + selectedTariffId));
-			Integer spentResponses = selectedTariff.getSpentResponses();
-			selectedTariff.setSpentResponses(spentResponses + applyVacanciesCount);
-			selectedTariffRepository.save(selectedTariff);
+					// Добавить ID в список обработанных
+					processedIds.add(vacancyId);
 
-			state.setStatus(VacancyProcessingState.Status.ERROR);
-			state.setAppliedVacancies(applyVacanciesCount);
-			state.setAppliedDate(LocalDate.now());
-			vacancyProcessingStateRepository.save(state);
-			vacancyProcessingStateCache.invalidate(processId);
+					// Обновить строку с обработанными ID в БД
+					String updatedProcessedIds = String.join(",", processedIds);
+					state.setProcessedVacancyIds(updatedProcessedIds);
+					vacancyProcessingStateRepository.save(state);
+
+					// Сразу обновляем кэш с новым счётчиком и обработанными ID
+					processState.setApplyVacanciesCount(applyVacanciesCount);
+					processState.setProcessedVacancyIds(updatedProcessedIds);
+					vacancyProcessingStateCache.put(processId, processState);
+					log.info("Successfully applied to vacancy {}. Current count: {}. Processed IDs: {}", vacancyId, applyVacanciesCount, updatedProcessedIds);
+				}
+			} catch (Exception e) {
+				log.error("Error processing vacancy {}. Skipping this vacancy and continuing with next one.", vacancyId, e);
+				// Пропускаем эту вакансию и продолжаем со следующей
+				continue;
+			}
 		}
+
+		log.info("All vacancies processed. Final count: {}", applyVacanciesCount);
+		saveCompletedProcess(selectedTariffId, applyVacanciesCount, state, processId);
 	}
 
 	private void saveCompletedProcess(Long selectedTariffId, int applyVacanciesCount, VacancyProcessingState state, String processId) {
@@ -108,6 +143,20 @@ public class ApplyVacanciesEventListener {
 		selectedTariffRepository.save(selectedTariff);
 
 		state.setStatus(VacancyProcessingState.Status.COMPLETED);
+		state.setAppliedVacancies(applyVacanciesCount);
+		state.setAppliedDate(LocalDate.now());
+		vacancyProcessingStateRepository.save(state);
+		vacancyProcessingStateCache.invalidate(processId);
+	}
+
+	private void handleFatalError(Long selectedTariffId, int applyVacanciesCount, VacancyProcessingState state, String processId) {
+		SelectedTariff selectedTariff = selectedTariffRepository.findById(selectedTariffId)
+				.orElseThrow(() -> new IllegalStateException("Can't find selected tariff with id: " + selectedTariffId));
+		Integer spentResponses = selectedTariff.getSpentResponses();
+		selectedTariff.setSpentResponses(spentResponses + applyVacanciesCount);
+		selectedTariffRepository.save(selectedTariff);
+
+		state.setStatus(VacancyProcessingState.Status.ERROR);
 		state.setAppliedVacancies(applyVacanciesCount);
 		state.setAppliedDate(LocalDate.now());
 		vacancyProcessingStateRepository.save(state);
@@ -182,7 +231,7 @@ public class ApplyVacanciesEventListener {
 
 	public boolean applyToVacancy() {
 		try {
-			Thread.sleep(3000);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}

@@ -13,4 +13,5 @@ import java.util.List;
 @ToString
 public class ApplyVacanciesResponse {
 	private String processId;
+	private String message;
 }

@@ -15,5 +15,6 @@
     <include file="changelog/add-settings-and-onboarding.xml" relativeToChangelogFile="true"/>
     <include file="changelog/add-tokens.xml" relativeToChangelogFile="true"/>
     <include file="changelog/add-token-expiration.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/add-processed-vacancy-ids.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

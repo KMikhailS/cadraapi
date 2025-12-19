@@ -15,4 +15,8 @@ public interface VacancyProcessingStateRepository extends JpaRepository<VacancyP
 
 	List<VacancyProcessingState> findAllByResumeIdInAndStatusAndAppliedDate(Collection<String> resumeIds, VacancyProcessingState.Status status, LocalDate appliedDate);
 
+	List<VacancyProcessingState> findAllByResumeIdInAndStatus(Collection<String> resumeIds, VacancyProcessingState.Status status);
+
+	List<VacancyProcessingState> findAllByResumeIdAndStatus(String resumeId, VacancyProcessingState.Status status);
+
 }

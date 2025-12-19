@@ -80,6 +80,9 @@ public class UserService {
 		selectedTariffDTO.setMaxResponses(selectedTariff.getMaxResponses());
 		selectedTariffDTO.setSpentResponses(selectedTariff.getSpentResponses());
 		Integer availableVacanciesForToday = vacancyService.getResponsesCount(selectedTariff, userInfo);
+		if (availableVacanciesForToday < 0) {
+			availableVacanciesForToday = 0;
+		}
 		selectedTariffDTO.setAvailableVacanciesForToday(availableVacanciesForToday);
 		selectedTariffDTO.setIsActive(selectedTariff.getIsActive());
 		userInfoDTO.setSelectedTariff(selectedTariffDTO);

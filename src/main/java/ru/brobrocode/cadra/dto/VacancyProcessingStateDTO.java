@@ -15,4 +15,5 @@ public class VacancyProcessingStateDTO {
 	private String resumeId;
 	private int applyVacanciesCount;
 	private VacancyProcessingState.Status status;
+	private String processedVacancyIds;
 }
