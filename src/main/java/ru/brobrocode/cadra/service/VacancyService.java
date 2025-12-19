@@ -1,0 +1,471 @@
+package ru.brobrocode.cadra.service;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.brobrocode.cadra.client.api.ResumesApi;
+import ru.brobrocode.cadra.client.model.VacanciesVacanciesResponse;
+import ru.brobrocode.cadra.config.exception.TariffException;
+import ru.brobrocode.cadra.dto.*;
+import ru.brobrocode.cadra.entity.Resume;
+import ru.brobrocode.cadra.entity.SelectedTariff;
+import ru.brobrocode.cadra.entity.UserInfo;
+import ru.brobrocode.cadra.entity.VacancyProcessingState;
+import ru.brobrocode.cadra.mapper.VacancyMapper;
+import ru.brobrocode.cadra.repository.SelectedTariffRepository;
+import ru.brobrocode.cadra.repository.UserInfoRepository;
+import ru.brobrocode.cadra.repository.VacancyProcessingStateRepository;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static ru.brobrocode.cadra.constants.HHApiConstants.*;
+
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class VacancyService {
+
+	private final VacancyMapper vacancyMapper;
+	private final ResumesApi resumesApi;
+	private final UserInfoRepository userInfoRepository;
+	private final ApplicationEventPublisher applicationEventPublisher;
+	private final VacancyProcessingStateRepository vacancyProcessingStateRepository;
+	private final Cache<String, VacancyProcessingStateDTO> vacancyProcessingStateCache;
+	private final UserStateService userStateService;
+	private final SelectedTariffRepository selectedTariffRepository;
+
+	public Integer getFoundVacanciesCount(String resumeId, SettingsDTO settingsDTO) {
+		UserInfo userInfo = userStateService.getUserInfo();
+		String accessToken = userInfo.getAccessToken();
+		try {
+			int page = 0;
+			int perPage = 50;
+			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, settingsDTO, accessToken);
+			VacanciesVacanciesResponse vacanciesResponse = response.getBody();
+			if (vacanciesResponse != null) {
+				log.info("Found {} vacancies for user {}", vacanciesResponse.getItems().size(), userInfo.getId());
+				return vacanciesResponse.getFound();
+			}
+			return null;
+		} catch (Exception e) {
+			log.error("Error getting current user information", e);
+			throw new RuntimeException("Failed to retrieve user information from hh.ru", e);
+		}
+	}
+
+	public VacanciesDTO getVacanciesSimilarToResume(String resumeId, Integer page, Integer perPage) {
+		try {
+			UserInfo userInfo = userStateService.getUserInfo();
+			String accessToken = userInfo.getAccessToken();
+			ResponseEntity<VacanciesVacanciesResponse> response = getVacancies(resumeId, page, perPage, accessToken);
+			VacanciesVacanciesResponse vacanciesResponse = response.getBody();
+			if (vacanciesResponse != null) {
+				log.info("Found {} vacancies for user {}", vacanciesResponse.getItems().size(), userInfo.getId());
+				return vacancyMapper.toVacanciesDTO(vacanciesResponse);
+			}
+			return null;
+		} catch (Exception e) {
+			log.error("Error getting current user information", e);
+			throw new RuntimeException("Failed to retrieve user information from hh.ru", e);
+		}
+	}
+
+	public VacanciesDTO getAllVacanciesSimilarToResume(String resumeId, Integer responsesCount) {
+		List<VacancyItemDTO> allItems = new ArrayList<>();
+		int page = 0;
+		int perPage = 100;
+
+		int maxItems = responsesCount * 2;
+
+		try {
+			while (true) {
+				VacanciesDTO vacanciesPage = getVacanciesSimilarToResume(resumeId, page, perPage);
+				if (vacanciesPage == null || vacanciesPage.getItems() == null || vacanciesPage.getItems().isEmpty()) {
+					break;
+				}
+				allItems.addAll(vacanciesPage.getItems());
+				page++;
+				if (allItems.size() >= maxItems) {
+					break;
+				}
+			}
+
+			VacanciesDTO result = new VacanciesDTO();
+			result.setItems(allItems);
+			result.setFound(allItems.size());
+			return result;
+
+		} catch (Exception e) {
+			log.error("Error getting all vacancies similar to resume: {}", e.getMessage(), e);
+			throw new RuntimeException("Failed to retrieve all vacancies from hh.ru", e);
+		}
+	}
+
+	public Integer getResponsesCount(SelectedTariff selectedTariff, UserInfo userInfo) {
+		if (selectedTariff.getExpiresAt().isAfter(LocalDate.now())) {
+			Integer maxResponses = selectedTariff.getMaxResponses();
+			Integer spentResponses = selectedTariff.getSpentResponses();
+			Integer maxResponsesPerDay = selectedTariff.getMaxResponsesPerDay();
+			Integer appliedVacanciesForToday = getAppliedVacanciesForToday(userInfo);
+			log.info("Applied vacancies for today {}", appliedVacanciesForToday);
+			int remainResponses = maxResponses - spentResponses;
+			int availableForToday = maxResponsesPerDay - appliedVacanciesForToday;
+			log.info("Available for today {}", availableForToday);
+
+			return Math.min(availableForToday, remainResponses);
+		}
+		return 0;
+	}
+
+	private Integer getAppliedVacanciesForToday(UserInfo userInfo) {
+		LocalDate now = LocalDate.now();
+		List<Resume> resumes = userInfo.getResumes();
+		if(resumes != null && !resumes.isEmpty()) {
+			List<String> resumeIds = resumes.stream()
+					.map(Resume::getId)
+					.toList();
+			int completedProcesses = vacancyProcessingStateRepository
+					.findAllByResumeIdInAndStatusAndAppliedDate(resumeIds, VacancyProcessingState.Status.COMPLETED, now)
+					.stream()
+					.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
+					.sum();
+			int stoppedProcesses = vacancyProcessingStateRepository.findAllByResumeIdInAndStatus(resumeIds, VacancyProcessingState.Status.STOPPED)
+					.stream()
+					.mapToInt(state -> state.getAppliedVacancies() != null ? state.getAppliedVacancies() : 0)
+					.sum();
+			return completedProcesses + stoppedProcesses;
+		}
+		return 0;
+	}
+
+	@Transactional
+	public AvailableVacanciesResponse getAvailableVacancies(String resumeId) {
+		AvailableVacanciesResponse response = new AvailableVacanciesResponse();
+		UserInfo userInfo = getUserInfoWithTariffAndResumes();
+		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
+		if (selectedTariff == null) {
+			response.setVacancyIds(Collections.emptyList());
+			response.setVacanciesCount(0);
+			return response;
+		}
+		Integer responsesCount = getResponsesCount(selectedTariff, userInfo);
+		if (responsesCount < 0) {
+			responsesCount = 0;
+		}
+		log.info("Total responses count: {} for resume: {}", responsesCount, resumeId);
+		if (responsesCount <= 0) {
+			response.setVacancyIds(Collections.emptyList());
+			response.setVacanciesCount(0);
+			return response;
+		}
+		Boolean isSendLetter = selectedTariff.getIsSendLetter();
+		VacanciesDTO vacancies = getAllVacanciesSimilarToResume(resumeId, responsesCount);
+		List<String> vacancyIds = new ArrayList<>();
+		if (vacancies != null && vacancies.getItems() != null && !vacancies.getItems().isEmpty()) {
+			vacancyIds = vacancies.getItems().stream()
+					.filter(item -> isAvailableVacancy(item, isSendLetter))
+					.limit(responsesCount)
+					.map(VacancyItemDTO::getId)
+					.toList();
+		}
+		response.setVacancyIds(vacancyIds);
+		response.setVacanciesCount(vacancyIds.size());
+		return response;
+	}
+
+	@Transactional
+	public ApplyVacanciesResponse applyToAllVacancies(String resumeId, AvailableVacanciesRequest request) {
+		UserInfo userInfo = getUserInfoWithTariff();
+		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
+		if (selectedTariff == null) {
+			throw new TariffException("Не найден активный тариф для пользователя " + userInfo.getId());
+		}
+		ApplyVacanciesResponse applyVacanciesResponse = new ApplyVacanciesResponse();
+		List<VacancyProcessingState> states =
+				vacancyProcessingStateRepository.findAllByResumeIdAndStatus(resumeId, VacancyProcessingState.Status.PROCESS);
+		if (states != null && !states.isEmpty()) {
+			applyVacanciesResponse.setMessage("У вас уже есть запущенный процесс отправки откликов");
+			return applyVacanciesResponse;
+		}
+		VacancyProcessingState vacancyProcessingState = new VacancyProcessingState();
+		String processId = UUID.randomUUID().toString();
+		vacancyProcessingState.setId(processId);
+		vacancyProcessingState.setResumeId(resumeId);
+		vacancyProcessingState.setStatus(VacancyProcessingState.Status.PROCESS);
+		vacancyProcessingState.setCreatedAt(LocalDateTime.now());
+		vacancyProcessingState.setUpdatedAt(LocalDateTime.now());
+		vacancyProcessingStateRepository.save(vacancyProcessingState);
+
+		VacancyProcessingStateDTO vacancyProcessingStateDTO = new VacancyProcessingStateDTO();
+		vacancyProcessingStateDTO.setId(processId);
+		vacancyProcessingStateDTO.setStatus(VacancyProcessingState.Status.PROCESS);
+		vacancyProcessingStateDTO.setResumeId(resumeId);
+
+		vacancyProcessingStateCache.put(processId, vacancyProcessingStateDTO);
+
+		String accessToken = userInfo.getAccessToken();
+		ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, resumeId, userInfo.getPhone(),
+				userInfo.getEmail(), selectedTariff.getId(), request.getVacancyIds(), accessToken);
+		applicationEventPublisher.publishEvent(event);
+
+		applyVacanciesResponse.setProcessId(processId);
+
+		return applyVacanciesResponse;
+	}
+
+	public ApplyStatusResponse getApplyVacancyStatus(String processId) {
+		ApplyStatusResponse response = new ApplyStatusResponse();
+		VacancyProcessingStateDTO state = vacancyProcessingStateCache.getIfPresent(processId);
+		if (state == null) {
+			VacancyProcessingState vacancyProcessingState = vacancyProcessingStateRepository.findById(processId).orElse(null);
+			if (vacancyProcessingState == null) {
+				response.setProcessId(processId);
+				response.setMessage("Ошибка процесса отправки резюме. Не найден процесс.");
+				response.setStatus(VacancyProcessingState.Status.ERROR);
+				return response;
+			} else {
+				state = new VacancyProcessingStateDTO();
+				state.setId(processId);
+				state.setStatus(vacancyProcessingState.getStatus());
+				state.setResumeId(vacancyProcessingState.getResumeId());
+				state.setApplyVacanciesCount(vacancyProcessingState.getAppliedVacancies() != null ? vacancyProcessingState.getAppliedVacancies() : 0);
+				state.setProcessedVacancyIds(vacancyProcessingState.getProcessedVacancyIds());
+			}
+		}
+		response.setProcessId(processId);
+		response.setAppliedVacancies(state.getApplyVacanciesCount());
+		response.setStatus(state.getStatus());
+		response.setProcessedVacancyIds(state.getProcessedVacancyIds());
+		return response;
+	}
+
+	@Transactional(readOnly = true)
+	public ApplyStatusResponse getFinalVacancyStatus(String processId) {
+		ApplyStatusResponse response = new ApplyStatusResponse();
+		VacancyProcessingState vacancyProcessingState = vacancyProcessingStateRepository.findById(processId)
+				.orElseThrow(() -> new IllegalArgumentException("Process not found " + processId));
+		response.setProcessId(processId);
+		response.setAppliedVacancies(vacancyProcessingState.getAppliedVacancies());
+		response.setStatus(vacancyProcessingState.getStatus());
+		return response;
+	}
+
+	private boolean isAvailableVacancy(VacancyItemDTO item, Boolean isSendLetter) {
+		Boolean hasTest = item.getHasTest();
+		boolean noNeedTest = hasTest == null || !hasTest;
+		Boolean responseLetterRequired = item.getResponseLetterRequired();
+		boolean noNeedResponseLetterRequired = isSendLetter || responseLetterRequired == null || !responseLetterRequired;
+
+		return noNeedTest && noNeedResponseLetterRequired;
+	}
+
+	private UserInfo getUserInfoWithTariff() {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if (principal instanceof OAuth2User user) {
+			Map<String, Object> attributes = user.getAttributes();
+			String userId = (String) attributes.get("id");
+			return userInfoRepository.findByIdWithSelectedTariffs(userId)
+					.orElseThrow(() -> new IllegalArgumentException("User not found"));
+		}
+		throw new IllegalStateException("User not found");
+	}
+
+	private UserInfo getUserInfoWithTariffAndResumes() {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if (principal instanceof OAuth2User user) {
+			Map<String, Object> attributes = user.getAttributes();
+			String userId = (String) attributes.get("id");
+			UserInfo userInfo = userInfoRepository.findByIdWithSelectedTariffs(userId)
+					.orElseThrow(() -> new IllegalArgumentException("User not found"));
+			userInfoRepository.findByIdWithResumes(userId);
+			return userInfo;
+		}
+		throw new IllegalStateException("User not found");
+	}
+
+	private SelectedTariff getActiveSelectedTariffByUser(UserInfo userInfo) {
+		return userInfo.getSelectedTariff().stream()
+				.filter(SelectedTariff::getIsActive)
+				.filter(tariff -> tariff.getExpiresAt().isAfter(LocalDate.now()))
+				.findFirst()
+				.orElse(null);
+	}
+
+	@Transactional
+	public ApplyStatusResponse putApplyVacancyStatus(String processId, VacancyStatusRequest vacancyStatusRequest) {
+		VacancyProcessingStateDTO vacancyProcessingStateDTO = getVacancyProcessingState(processId);
+		log.info("PUT ApplyVacancyStatus vacancyProcessingStateDTO {}", vacancyProcessingStateDTO);
+		VacancyProcessingState state = vacancyProcessingStateRepository.findById(processId)
+				.orElseThrow(() -> new IllegalArgumentException("Process not found"));
+		state.setStatus(vacancyStatusRequest.getStatus());
+		vacancyProcessingStateRepository.save(state);
+		vacancyProcessingStateDTO.setStatus(vacancyStatusRequest.getStatus());
+		vacancyProcessingStateCache.put(processId, vacancyProcessingStateDTO);
+
+		UserInfo userInfo = userStateService.getUserInfoWithTariffAndResumes();
+		SelectedTariff selectedTariff = getActiveSelectedTariffByUser(userInfo);
+		if (selectedTariff == null) {
+			throw new TariffException("Не найден активный тариф для пользователя " + userInfo.getId());
+		}
+		if (vacancyStatusRequest.getStatus() == VacancyProcessingState.Status.COMPLETED) {
+			saveCompletedProcess(selectedTariff, vacancyProcessingStateDTO.getApplyVacanciesCount(), state, processId);
+		} else if (vacancyProcessingStateDTO.getStatus() == VacancyProcessingState.Status.PROCESS) {
+			UserInfoDTO userInfoDTO = userStateService.getUserInfoDTO(userInfo);
+			ApplyVacanciesEvent event = new ApplyVacanciesEvent(processId, vacancyStatusRequest.getResumeId(), userInfoDTO.getPhone(),
+					userInfoDTO.getEmail(), selectedTariff.getId(), vacancyStatusRequest.getVacancyIds(), userInfo.getAccessToken());
+			applicationEventPublisher.publishEvent(event);
+		}
+
+		ApplyStatusResponse response = new ApplyStatusResponse();
+		response.setProcessId(processId);
+		response.setAppliedVacancies(state.getAppliedVacancies());
+		response.setStatus(state.getStatus());
+		return response;
+	}
+	private void saveCompletedProcess(SelectedTariff selectedTariff, int applyVacanciesCount, VacancyProcessingState state, String processId) {
+		Integer spentResponses = selectedTariff.getSpentResponses();
+		selectedTariff.setSpentResponses(spentResponses + applyVacanciesCount);
+		selectedTariffRepository.save(selectedTariff);
+
+		state.setStatus(VacancyProcessingState.Status.COMPLETED);
+		state.setAppliedVacancies(applyVacanciesCount);
+		state.setAppliedDate(LocalDate.now());
+		vacancyProcessingStateRepository.save(state);
+		vacancyProcessingStateCache.invalidate(processId);
+	}
+
+
+	private VacancyProcessingStateDTO getVacancyProcessingState(String processId) {
+		VacancyProcessingStateDTO vacancyProcessingStateDTO = vacancyProcessingStateCache.getIfPresent(processId);
+		if (vacancyProcessingStateDTO == null) {
+			VacancyProcessingState state = vacancyProcessingStateRepository.findById(processId)
+					.orElseThrow(() -> new IllegalArgumentException("Process not found " + processId));
+			vacancyProcessingStateDTO = new VacancyProcessingStateDTO();
+			vacancyProcessingStateDTO.setId(state.getId());
+			vacancyProcessingStateDTO.setStatus(state.getStatus());
+			vacancyProcessingStateDTO.setResumeId(state.getResumeId());
+			vacancyProcessingStateDTO.setProcessedVacancyIds(state.getProcessedVacancyIds());
+			vacancyProcessingStateCache.put(processId, vacancyProcessingStateDTO);
+			return vacancyProcessingStateDTO;
+		}
+		return vacancyProcessingStateDTO;
+	}
+
+	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage, SettingsDTO settings, String accessToken) {
+		String text = null;
+		String experience = null;
+		String employment = null;
+		BigDecimal salary = null;
+		String currency = null;
+		if (settings != null) {
+			if (settings.getText() != null && !settings.getText().isEmpty()) {
+				text = settings.getText();
+			}
+			if (settings.getExperience() != null && !settings.getExperience().isEmpty()) {
+				experience = settings.getExperience();
+			}
+			if (settings.getEmployment() != null && !settings.getEmployment().isEmpty()) {
+				employment = settings.getEmployment();
+			}
+			if (settings.getSalary() != null) {
+				salary = settings.getSalary();
+			}
+			if (settings.getCurrency() != null && !settings.getCurrency().isEmpty()) {
+				currency = settings.getCurrency();
+			}
+		}
+		return resumesApi.getVacanciesSimilarToResume(
+				resumeId,
+				DEFAULT_USER_AGENT,
+				"Bearer " + accessToken,
+				page,
+				perPage,
+				text,
+				null,
+				experience,
+				employment,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				currency,
+				salary,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				DEFAULT_LOCALE,
+				DEFAULT_HOST
+		);
+	}
+
+	private ResponseEntity<VacanciesVacanciesResponse> getVacancies(String resumeId, int page, int perPage, String accessToken) {
+		return resumesApi.getVacanciesSimilarToResume(
+				resumeId,
+				DEFAULT_USER_AGENT,
+				"Bearer " + accessToken,
+				page,
+				perPage,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				DEFAULT_LOCALE,
+				DEFAULT_HOST
+		);
+	}
+}

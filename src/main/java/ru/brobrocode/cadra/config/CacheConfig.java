@@ -1,0 +1,31 @@
+package ru.brobrocode.cadra.config;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import ru.brobrocode.cadra.dto.ResumeProfileDTO;
+import ru.brobrocode.cadra.dto.UserInfoDTO;
+import ru.brobrocode.cadra.dto.VacancyItemDTO;
+import ru.brobrocode.cadra.dto.VacancyProcessingStateDTO;
+
+import java.util.concurrent.TimeUnit;
+
+@Configuration
+public class CacheConfig {
+
+	@Bean
+	public LoadingCache<String, UserInfoDTO> userInfoCache() {
+		return Caffeine.newBuilder()
+				.expireAfterAccess(1, TimeUnit.MINUTES)
+				.build(key -> new UserInfoDTO());
+	}
+
+	@Bean
+	public Cache<String, VacancyProcessingStateDTO> vacancyProcessingStateCache() {
+		return Caffeine.newBuilder()
+				.expireAfterAccess(72, TimeUnit.HOURS)
+				.build();
+	}
+}

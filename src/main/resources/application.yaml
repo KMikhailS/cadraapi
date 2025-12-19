@@ -1,0 +1,92 @@
+server:
+  port: ${SERVIER_PORT:8081}
+
+spring:
+  jackson:
+    default-property-inclusion: non_null
+  application:
+    name: cadra
+  security:
+    oauth2:
+      client:
+        registration:
+          hh:
+            client-id: ${CLIENT_ID:11111}
+            client-secret: ${CLIENT_SECRET:1111}
+            authorization-grant-type: authorization_code
+            redirect-uri: ${REDIRECT_URI:http://localhost:8080/login/oauth2/code/hh}
+            client-name: HeadHunter
+        provider:
+          hh:
+            authorization-uri: ${AUTHORIZATION_URI:http://localhost:9000/oauth/authorize}
+            token-uri: https://api.hh.ru/token
+            user-info-uri: https://api.hh.ru/me
+            user-name-attribute: id
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/cadra}
+    username: ${POSTGRES_USER:admin}
+    password: ${POSTGRES_PASSWORD:admin}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  liquibase:
+    change-log: classpath:db/db.changelog-master.xml
+    enabled: false
+    drop-first: false
+  ai:
+    openai:
+      api-key: ${OPENROUTER_API_KEY}
+      base-url: https://openrouter.ai/api
+      chat:
+        options:
+          model: openai/gpt-4o-mini
+          temperature: 0.3
+
+
+
+hh:
+  api:
+    base-url: https://api.hh.ru
+
+# SpringDoc OpenAPI configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    filter: true
+  show-actuator: false
+
+cadra:
+  client-id: ${CLIENT_ID:1111}
+  client-secret: ${CLIENT_SECRET:1111}
+  redirect-uri: ${CADRA_REDIRECT_URI:https://cadra.online/api/login/oauth2/code/hh/test}
+  dashboard-redirect-uri: ${DASHBOARD_REDIRECT_URI:https://cadra.online/oauth-callback}
+
+jwt:
+  secret: ${JWT_SECRET:11111}
+  access-token:
+    expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
+  refresh-token:
+    expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+giga-chat:
+  auth-key: ${GIGA_CHAT_AUTH_KEY}
+
+yukassa:
+  shop-id: ${YUKASSA_SHOP_ID:1157559}
+  secret-key: ${YUKASSA_SECRET_KEY:test_1xIVvFZENWiDUKBmo22G5QzB1fnTKlY_AXZuqplEhDg}
+  api-url: ${YUKASSA_SHOP_API_URL:https://api.yookassa.ru}
+  redirect-url: ${YUKASSA_SHOP_REDIRECT_URL:https://cadra.online}
+
+logging.level.ru.brobrocode.cadra.client.yukassa.YuKassaClient: debug
+#feign.client.config.default.logger-level: full

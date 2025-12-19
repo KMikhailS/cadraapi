@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="create-selected-tariffs-table" author="mkrivoshchapov">
+        <createTable tableName="selected_tariff">
+            <column name="id" type="BIGINT(16)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tariff_id" type="BIGINT(16)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="spent_responses" type="INTEGER(16)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="max_responses" type="INTEGER(16)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="max_responses_per_day" type="INTEGER(16)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="is_send_letter" type="BOOLEAN">
+                <constraints nullable="true"/>
+            </column>
+            <column name="user_id" type="VARCHAR(64)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="is_active" type="BOOLEAN">
+                <constraints nullable="true"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createSequence sequenceName="cdr_selected_tariffs"/>
+
+        <addForeignKeyConstraint
+                baseTableName="selected_tariff"
+                baseColumnNames="tariff_id"
+                constraintName="fk_selected_tariff_tariff"
+                referencedTableName="tariffs"
+                referencedColumnNames="id"
+                onDelete="SET NULL"
+                onUpdate="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="selected_tariff"
+                baseColumnNames="user_id"
+                constraintName="fk_selected_tariff_user"
+                referencedTableName="users_info"
+                referencedColumnNames="id"
+                onDelete="SET NULL"
+                onUpdate="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>

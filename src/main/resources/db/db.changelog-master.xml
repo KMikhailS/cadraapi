@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd"
+        logicalFilePath="path-independent">
+
+    <include file="changelog/create-tariffs-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-negotiations-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-users-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-resumes-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-selected-tariffs-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-payment-table.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create-vacancy_processing_state.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/add-settings-and-onboarding.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/add-tokens.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/add-token-expiration.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/add-processed-vacancy-ids.xml" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>

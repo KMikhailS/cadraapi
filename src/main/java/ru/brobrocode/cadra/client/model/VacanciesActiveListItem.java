@@ -1,0 +1,825 @@
+package ru.brobrocode.cadra.client.model;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Generated;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * VacanciesActiveListItem
+ */
+
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-08-17T15:41:09.394389505+05:00[Asia/Yekaterinburg]", comments = "Generator version: 7.6.0")
+public class VacanciesActiveListItem {
+
+  private VacanciesAddress address = null;
+
+  private String alternateUrl;
+
+  private String applyAlternateUrl;
+
+  private Boolean archived;
+
+  private IncludesArea area;
+
+  private VacancyDepartmentOutput department = null;
+
+  private VacanciesEmployerPublic employer;
+
+  private Boolean hasTest;
+
+  private String id;
+
+  private String name;
+
+  private Boolean premium;
+
+  private String publishedAt;
+
+  @Valid
+  private List<VacancyRelationItem> relations = new ArrayList<>();
+
+  private Boolean responseLetterRequired;
+
+  private String responseUrl = null;
+
+  @Deprecated
+  private VacancySalary salary = null;
+
+  private VacancySalaryRangeSalaryRangeOutput salaryRange = null;
+
+  private Boolean showContacts = null;
+
+  private Boolean showLogoInSearch = null;
+
+  private VacancyTypeOutput type;
+
+  private String url;
+
+  private VacancyBillingTypeOutput billingType = null;
+
+  private Boolean canUpgradeBillingType;
+
+  private VacancyCountersForActive counters;
+
+  private String createdAt;
+
+  private String expiresAt;
+
+  private Boolean hasUpdates;
+
+  private VacancyManagerOutput manager;
+
+  private BigDecimal sortPointDistance = null;
+
+  private VacancyVacancyProperties vacancyProperties;
+
+  public VacanciesActiveListItem() {
+    super();
+  }
+
+  /**
+   * Constructor with only required parameters
+   */
+  public VacanciesActiveListItem(String alternateUrl, String applyAlternateUrl, Boolean archived, IncludesArea area, VacancyDepartmentOutput department, VacanciesEmployerPublic employer, Boolean hasTest, String id, String name, Boolean premium, String publishedAt, List<VacancyRelationItem> relations, Boolean responseLetterRequired, VacancySalary salary, VacancySalaryRangeSalaryRangeOutput salaryRange, VacancyTypeOutput type, String url, Boolean canUpgradeBillingType, VacancyCountersForActive counters, String createdAt, String expiresAt, Boolean hasUpdates, VacancyManagerOutput manager) {
+    this.alternateUrl = alternateUrl;
+    this.applyAlternateUrl = applyAlternateUrl;
+    this.archived = archived;
+    this.area = area;
+    this.department = department;
+    this.employer = employer;
+    this.hasTest = hasTest;
+    this.id = id;
+    this.name = name;
+    this.premium = premium;
+    this.publishedAt = publishedAt;
+    this.relations = relations;
+    this.responseLetterRequired = responseLetterRequired;
+    this.salary = salary;
+    this.salaryRange = salaryRange;
+    this.type = type;
+    this.url = url;
+    this.canUpgradeBillingType = canUpgradeBillingType;
+    this.counters = counters;
+    this.createdAt = createdAt;
+    this.expiresAt = expiresAt;
+    this.hasUpdates = hasUpdates;
+    this.manager = manager;
+  }
+
+  public VacanciesActiveListItem address(VacanciesAddress address) {
+    this.address = address;
+    return this;
+  }
+
+  /**
+   * Get address
+   * @return address
+  */
+  @Valid 
+  @Schema(name = "address", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("address")
+  public VacanciesAddress getAddress() {
+    return address;
+  }
+
+  public void setAddress(VacanciesAddress address) {
+    this.address = address;
+  }
+
+  public VacanciesActiveListItem alternateUrl(String alternateUrl) {
+    this.alternateUrl = alternateUrl;
+    return this;
+  }
+
+  /**
+   * Ссылка на представление вакансии на сайте
+   * @return alternateUrl
+  */
+  @NotNull 
+  @Schema(name = "alternate_url", description = "Ссылка на представление вакансии на сайте", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("alternate_url")
+  public String getAlternateUrl() {
+    return alternateUrl;
+  }
+
+  public void setAlternateUrl(String alternateUrl) {
+    this.alternateUrl = alternateUrl;
+  }
+
+  public VacanciesActiveListItem applyAlternateUrl(String applyAlternateUrl) {
+    this.applyAlternateUrl = applyAlternateUrl;
+    return this;
+  }
+
+  /**
+   * Ссылка на отклик на вакансию на сайте
+   * @return applyAlternateUrl
+  */
+  @NotNull 
+  @Schema(name = "apply_alternate_url", description = "Ссылка на отклик на вакансию на сайте", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("apply_alternate_url")
+  public String getApplyAlternateUrl() {
+    return applyAlternateUrl;
+  }
+
+  public void setApplyAlternateUrl(String applyAlternateUrl) {
+    this.applyAlternateUrl = applyAlternateUrl;
+  }
+
+  public VacanciesActiveListItem archived(Boolean archived) {
+    this.archived = archived;
+    return this;
+  }
+
+  /**
+   * Находится ли данная вакансия в архиве
+   * @return archived
+  */
+  @NotNull 
+  @Schema(name = "archived", description = "Находится ли данная вакансия в архиве", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("archived")
+  public Boolean getArchived() {
+    return archived;
+  }
+
+  public void setArchived(Boolean archived) {
+    this.archived = archived;
+  }
+
+  public VacanciesActiveListItem area(IncludesArea area) {
+    this.area = area;
+    return this;
+  }
+
+  /**
+   * Get area
+   * @return area
+  */
+  @NotNull @Valid 
+  @Schema(name = "area", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("area")
+  public IncludesArea getArea() {
+    return area;
+  }
+
+  public void setArea(IncludesArea area) {
+    this.area = area;
+  }
+
+  public VacanciesActiveListItem department(VacancyDepartmentOutput department) {
+    this.department = department;
+    return this;
+  }
+
+  /**
+   * Get department
+   * @return department
+  */
+  @NotNull @Valid 
+  @Schema(name = "department", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("department")
+  public VacancyDepartmentOutput getDepartment() {
+    return department;
+  }
+
+  public void setDepartment(VacancyDepartmentOutput department) {
+    this.department = department;
+  }
+
+  public VacanciesActiveListItem employer(VacanciesEmployerPublic employer) {
+    this.employer = employer;
+    return this;
+  }
+
+  /**
+   * Get employer
+   * @return employer
+  */
+  @NotNull @Valid 
+  @Schema(name = "employer", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("employer")
+  public VacanciesEmployerPublic getEmployer() {
+    return employer;
+  }
+
+  public void setEmployer(VacanciesEmployerPublic employer) {
+    this.employer = employer;
+  }
+
+  public VacanciesActiveListItem hasTest(Boolean hasTest) {
+    this.hasTest = hasTest;
+    return this;
+  }
+
+  /**
+   * Информация о наличии прикрепленного тестового задании к вакансии
+   * @return hasTest
+  */
+  @NotNull 
+  @Schema(name = "has_test", description = "Информация о наличии прикрепленного тестового задании к вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("has_test")
+  public Boolean getHasTest() {
+    return hasTest;
+  }
+
+  public void setHasTest(Boolean hasTest) {
+    this.hasTest = hasTest;
+  }
+
+  public VacanciesActiveListItem id(String id) {
+    this.id = id;
+    return this;
+  }
+
+  /**
+   * Идентификатор вакансии
+   * @return id
+  */
+  @NotNull 
+  @Schema(name = "id", description = "Идентификатор вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("id")
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public VacanciesActiveListItem name(String name) {
+    this.name = name;
+    return this;
+  }
+
+  /**
+   * Название вакансии
+   * @return name
+  */
+  @NotNull 
+  @Schema(name = "name", description = "Название вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("name")
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public VacanciesActiveListItem premium(Boolean premium) {
+    this.premium = premium;
+    return this;
+  }
+
+  /**
+   * Является ли данная вакансия премиум-вакансией
+   * @return premium
+  */
+  @NotNull 
+  @Schema(name = "premium", description = "Является ли данная вакансия премиум-вакансией", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("premium")
+  public Boolean getPremium() {
+    return premium;
+  }
+
+  public void setPremium(Boolean premium) {
+    this.premium = premium;
+  }
+
+  public VacanciesActiveListItem publishedAt(String publishedAt) {
+    this.publishedAt = publishedAt;
+    return this;
+  }
+
+  /**
+   * Дата и время публикации вакансии
+   * @return publishedAt
+  */
+  @NotNull 
+  @Schema(name = "published_at", description = "Дата и время публикации вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("published_at")
+  public String getPublishedAt() {
+    return publishedAt;
+  }
+
+  public void setPublishedAt(String publishedAt) {
+    this.publishedAt = publishedAt;
+  }
+
+  public VacanciesActiveListItem relations(List<VacancyRelationItem> relations) {
+    this.relations = relations;
+    return this;
+  }
+
+  public VacanciesActiveListItem addRelationsItem(VacancyRelationItem relationsItem) {
+    if (this.relations == null) {
+      this.relations = new ArrayList<>();
+    }
+    this.relations.add(relationsItem);
+    return this;
+  }
+
+  /**
+   * Возвращает связи соискателя с вакансией. Значения из поля `vacancy_relation` в [справочнике полей](#tag/Obshie-spravochniki/operation/get-dictionaries)
+   * @return relations
+  */
+  @NotNull @Valid 
+  @Schema(name = "relations", description = "Возвращает связи соискателя с вакансией. Значения из поля `vacancy_relation` в [справочнике полей](#tag/Obshie-spravochniki/operation/get-dictionaries)", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("relations")
+  public List<VacancyRelationItem> getRelations() {
+    return relations;
+  }
+
+  public void setRelations(List<VacancyRelationItem> relations) {
+    this.relations = relations;
+  }
+
+  public VacanciesActiveListItem responseLetterRequired(Boolean responseLetterRequired) {
+    this.responseLetterRequired = responseLetterRequired;
+    return this;
+  }
+
+  /**
+   * Обязательно ли заполнять сообщение при отклике на вакансию
+   * @return responseLetterRequired
+  */
+  @NotNull 
+  @Schema(name = "response_letter_required", description = "Обязательно ли заполнять сообщение при отклике на вакансию", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("response_letter_required")
+  public Boolean getResponseLetterRequired() {
+    return responseLetterRequired;
+  }
+
+  public void setResponseLetterRequired(Boolean responseLetterRequired) {
+    this.responseLetterRequired = responseLetterRequired;
+  }
+
+  public VacanciesActiveListItem responseUrl(String responseUrl) {
+    this.responseUrl = responseUrl;
+    return this;
+  }
+
+  /**
+   * URL отклика для прямых вакансий (`type.id=direct`)
+   * @return responseUrl
+  */
+  
+  @Schema(name = "response_url", description = "URL отклика для прямых вакансий (`type.id=direct`)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("response_url")
+  public String getResponseUrl() {
+    return responseUrl;
+  }
+
+  public void setResponseUrl(String responseUrl) {
+    this.responseUrl = responseUrl;
+  }
+
+  public VacanciesActiveListItem salary(VacancySalary salary) {
+    this.salary = salary;
+    return this;
+  }
+
+  /**
+   * Get salary
+   * @return salary
+   * @deprecated
+  */
+  @NotNull @Valid 
+  @Schema(name = "salary", deprecated = true, requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("salary")
+  @Deprecated
+  public VacancySalary getSalary() {
+    return salary;
+  }
+
+  /**
+   * @deprecated
+  */
+  @Deprecated
+  public void setSalary(VacancySalary salary) {
+    this.salary = salary;
+  }
+
+  public VacanciesActiveListItem salaryRange(VacancySalaryRangeSalaryRangeOutput salaryRange) {
+    this.salaryRange = salaryRange;
+    return this;
+  }
+
+  /**
+   * Get salaryRange
+   * @return salaryRange
+  */
+  @NotNull @Valid 
+  @Schema(name = "salary_range", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("salary_range")
+  public VacancySalaryRangeSalaryRangeOutput getSalaryRange() {
+    return salaryRange;
+  }
+
+  public void setSalaryRange(VacancySalaryRangeSalaryRangeOutput salaryRange) {
+    this.salaryRange = salaryRange;
+  }
+
+  public VacanciesActiveListItem showContacts(Boolean showContacts) {
+    this.showContacts = showContacts;
+    return this;
+  }
+
+  /**
+   * Доступны ли контакты в вакансии
+   * @return showContacts
+  */
+  
+  @Schema(name = "show_contacts", description = "Доступны ли контакты в вакансии", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("show_contacts")
+  public Boolean getShowContacts() {
+    return showContacts;
+  }
+
+  public void setShowContacts(Boolean showContacts) {
+    this.showContacts = showContacts;
+  }
+
+  public VacanciesActiveListItem showLogoInSearch(Boolean showLogoInSearch) {
+    this.showLogoInSearch = showLogoInSearch;
+    return this;
+  }
+
+  /**
+   * Отображать ли лого для вакансии в поисковой выдаче
+   * @return showLogoInSearch
+  */
+  
+  @Schema(name = "show_logo_in_search", description = "Отображать ли лого для вакансии в поисковой выдаче", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("show_logo_in_search")
+  public Boolean getShowLogoInSearch() {
+    return showLogoInSearch;
+  }
+
+  public void setShowLogoInSearch(Boolean showLogoInSearch) {
+    this.showLogoInSearch = showLogoInSearch;
+  }
+
+  public VacanciesActiveListItem type(VacancyTypeOutput type) {
+    this.type = type;
+    return this;
+  }
+
+  /**
+   * Get type
+   * @return type
+  */
+  @NotNull @Valid 
+  @Schema(name = "type", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("type")
+  public VacancyTypeOutput getType() {
+    return type;
+  }
+
+  public void setType(VacancyTypeOutput type) {
+    this.type = type;
+  }
+
+  public VacanciesActiveListItem url(String url) {
+    this.url = url;
+    return this;
+  }
+
+  /**
+   * URL вакансии
+   * @return url
+  */
+  @NotNull 
+  @Schema(name = "url", description = "URL вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("url")
+  public String getUrl() {
+    return url;
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public VacanciesActiveListItem billingType(VacancyBillingTypeOutput billingType) {
+    this.billingType = billingType;
+    return this;
+  }
+
+  /**
+   * Get billingType
+   * @return billingType
+  */
+  @Valid 
+  @Schema(name = "billing_type", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("billing_type")
+  public VacancyBillingTypeOutput getBillingType() {
+    return billingType;
+  }
+
+  public void setBillingType(VacancyBillingTypeOutput billingType) {
+    this.billingType = billingType;
+  }
+
+  public VacanciesActiveListItem canUpgradeBillingType(Boolean canUpgradeBillingType) {
+    this.canUpgradeBillingType = canUpgradeBillingType;
+    return this;
+  }
+
+  /**
+   * Можно ли улучшить биллинговый тип вакансии
+   * @return canUpgradeBillingType
+  */
+  @NotNull 
+  @Schema(name = "can_upgrade_billing_type", description = "Можно ли улучшить биллинговый тип вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("can_upgrade_billing_type")
+  public Boolean getCanUpgradeBillingType() {
+    return canUpgradeBillingType;
+  }
+
+  public void setCanUpgradeBillingType(Boolean canUpgradeBillingType) {
+    this.canUpgradeBillingType = canUpgradeBillingType;
+  }
+
+  public VacanciesActiveListItem counters(VacancyCountersForActive counters) {
+    this.counters = counters;
+    return this;
+  }
+
+  /**
+   * Get counters
+   * @return counters
+  */
+  @NotNull @Valid 
+  @Schema(name = "counters", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("counters")
+  public VacancyCountersForActive getCounters() {
+    return counters;
+  }
+
+  public void setCounters(VacancyCountersForActive counters) {
+    this.counters = counters;
+  }
+
+  public VacanciesActiveListItem createdAt(String createdAt) {
+    this.createdAt = createdAt;
+    return this;
+  }
+
+  /**
+   * Дата и время публикации вакансии
+   * @return createdAt
+  */
+  @NotNull 
+  @Schema(name = "created_at", description = "Дата и время публикации вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("created_at")
+  public String getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(String createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public VacanciesActiveListItem expiresAt(String expiresAt) {
+    this.expiresAt = expiresAt;
+    return this;
+  }
+
+  /**
+   * Дата и время окончания публикации вакансии
+   * @return expiresAt
+  */
+  @NotNull 
+  @Schema(name = "expires_at", description = "Дата и время окончания публикации вакансии", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("expires_at")
+  public String getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(String expiresAt) {
+    this.expiresAt = expiresAt;
+  }
+
+  public VacanciesActiveListItem hasUpdates(Boolean hasUpdates) {
+    this.hasUpdates = hasUpdates;
+    return this;
+  }
+
+  /**
+   * Есть ли в откликах/приглашениях по данной вакансии обновления, требующие внимания
+   * @return hasUpdates
+  */
+  @NotNull 
+  @Schema(name = "has_updates", description = "Есть ли в откликах/приглашениях по данной вакансии обновления, требующие внимания", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("has_updates")
+  public Boolean getHasUpdates() {
+    return hasUpdates;
+  }
+
+  public void setHasUpdates(Boolean hasUpdates) {
+    this.hasUpdates = hasUpdates;
+  }
+
+  public VacanciesActiveListItem manager(VacancyManagerOutput manager) {
+    this.manager = manager;
+    return this;
+  }
+
+  /**
+   * Get manager
+   * @return manager
+  */
+  @NotNull @Valid 
+  @Schema(name = "manager", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("manager")
+  public VacancyManagerOutput getManager() {
+    return manager;
+  }
+
+  public void setManager(VacancyManagerOutput manager) {
+    this.manager = manager;
+  }
+
+  public VacanciesActiveListItem sortPointDistance(BigDecimal sortPointDistance) {
+    this.sortPointDistance = sortPointDistance;
+    return this;
+  }
+
+  /**
+   * Расстояние в метрах между центром сортировки (заданной параметрами `sort_point_lat`, `sort_point_lng`) и указанным в вакансии адресом. В случае, если в адресе указаны только станции метро, выдается расстояние между центром сортировки и средней геометрической точкой указанных станций. Значение `sort_point_distance` выдается только в случае, если заданы параметры `sort_point_lat`, `sort_point_lng`, `order_by=distance` 
+   * @return sortPointDistance
+  */
+  @Valid 
+  @Schema(name = "sort_point_distance", description = "Расстояние в метрах между центром сортировки (заданной параметрами `sort_point_lat`, `sort_point_lng`) и указанным в вакансии адресом. В случае, если в адресе указаны только станции метро, выдается расстояние между центром сортировки и средней геометрической точкой указанных станций. Значение `sort_point_distance` выдается только в случае, если заданы параметры `sort_point_lat`, `sort_point_lng`, `order_by=distance` ", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("sort_point_distance")
+  public BigDecimal getSortPointDistance() {
+    return sortPointDistance;
+  }
+
+  public void setSortPointDistance(BigDecimal sortPointDistance) {
+    this.sortPointDistance = sortPointDistance;
+  }
+
+  public VacanciesActiveListItem vacancyProperties(VacancyVacancyProperties vacancyProperties) {
+    this.vacancyProperties = vacancyProperties;
+    return this;
+  }
+
+  /**
+   * Get vacancyProperties
+   * @return vacancyProperties
+  */
+  @Valid 
+  @Schema(name = "vacancy_properties", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("vacancy_properties")
+  public VacancyVacancyProperties getVacancyProperties() {
+    return vacancyProperties;
+  }
+
+  public void setVacancyProperties(VacancyVacancyProperties vacancyProperties) {
+    this.vacancyProperties = vacancyProperties;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    VacanciesActiveListItem vacanciesActiveListItem = (VacanciesActiveListItem) o;
+    return Objects.equals(this.address, vacanciesActiveListItem.address) &&
+        Objects.equals(this.alternateUrl, vacanciesActiveListItem.alternateUrl) &&
+        Objects.equals(this.applyAlternateUrl, vacanciesActiveListItem.applyAlternateUrl) &&
+        Objects.equals(this.archived, vacanciesActiveListItem.archived) &&
+        Objects.equals(this.area, vacanciesActiveListItem.area) &&
+        Objects.equals(this.department, vacanciesActiveListItem.department) &&
+        Objects.equals(this.employer, vacanciesActiveListItem.employer) &&
+        Objects.equals(this.hasTest, vacanciesActiveListItem.hasTest) &&
+        Objects.equals(this.id, vacanciesActiveListItem.id) &&
+        Objects.equals(this.name, vacanciesActiveListItem.name) &&
+        Objects.equals(this.premium, vacanciesActiveListItem.premium) &&
+        Objects.equals(this.publishedAt, vacanciesActiveListItem.publishedAt) &&
+        Objects.equals(this.relations, vacanciesActiveListItem.relations) &&
+        Objects.equals(this.responseLetterRequired, vacanciesActiveListItem.responseLetterRequired) &&
+        Objects.equals(this.responseUrl, vacanciesActiveListItem.responseUrl) &&
+        Objects.equals(this.salary, vacanciesActiveListItem.salary) &&
+        Objects.equals(this.salaryRange, vacanciesActiveListItem.salaryRange) &&
+        Objects.equals(this.showContacts, vacanciesActiveListItem.showContacts) &&
+        Objects.equals(this.showLogoInSearch, vacanciesActiveListItem.showLogoInSearch) &&
+        Objects.equals(this.type, vacanciesActiveListItem.type) &&
+        Objects.equals(this.url, vacanciesActiveListItem.url) &&
+        Objects.equals(this.billingType, vacanciesActiveListItem.billingType) &&
+        Objects.equals(this.canUpgradeBillingType, vacanciesActiveListItem.canUpgradeBillingType) &&
+        Objects.equals(this.counters, vacanciesActiveListItem.counters) &&
+        Objects.equals(this.createdAt, vacanciesActiveListItem.createdAt) &&
+        Objects.equals(this.expiresAt, vacanciesActiveListItem.expiresAt) &&
+        Objects.equals(this.hasUpdates, vacanciesActiveListItem.hasUpdates) &&
+        Objects.equals(this.manager, vacanciesActiveListItem.manager) &&
+        Objects.equals(this.sortPointDistance, vacanciesActiveListItem.sortPointDistance) &&
+        Objects.equals(this.vacancyProperties, vacanciesActiveListItem.vacancyProperties);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(address, alternateUrl, applyAlternateUrl, archived, area, department, employer, hasTest, id, name, premium, publishedAt, relations, responseLetterRequired, responseUrl, salary, salaryRange, showContacts, showLogoInSearch, type, url, billingType, canUpgradeBillingType, counters, createdAt, expiresAt, hasUpdates, manager, sortPointDistance, vacancyProperties);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class VacanciesActiveListItem {\n");
+    sb.append("    address: ").append(toIndentedString(address)).append("\n");
+    sb.append("    alternateUrl: ").append(toIndentedString(alternateUrl)).append("\n");
+    sb.append("    applyAlternateUrl: ").append(toIndentedString(applyAlternateUrl)).append("\n");
+    sb.append("    archived: ").append(toIndentedString(archived)).append("\n");
+    sb.append("    area: ").append(toIndentedString(area)).append("\n");
+    sb.append("    department: ").append(toIndentedString(department)).append("\n");
+    sb.append("    employer: ").append(toIndentedString(employer)).append("\n");
+    sb.append("    hasTest: ").append(toIndentedString(hasTest)).append("\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
+    sb.append("    name: ").append(toIndentedString(name)).append("\n");
+    sb.append("    premium: ").append(toIndentedString(premium)).append("\n");
+    sb.append("    publishedAt: ").append(toIndentedString(publishedAt)).append("\n");
+    sb.append("    relations: ").append(toIndentedString(relations)).append("\n");
+    sb.append("    responseLetterRequired: ").append(toIndentedString(responseLetterRequired)).append("\n");
+    sb.append("    responseUrl: ").append(toIndentedString(responseUrl)).append("\n");
+    sb.append("    salary: ").append(toIndentedString(salary)).append("\n");
+    sb.append("    salaryRange: ").append(toIndentedString(salaryRange)).append("\n");
+    sb.append("    showContacts: ").append(toIndentedString(showContacts)).append("\n");
+    sb.append("    showLogoInSearch: ").append(toIndentedString(showLogoInSearch)).append("\n");
+    sb.append("    type: ").append(toIndentedString(type)).append("\n");
+    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("    billingType: ").append(toIndentedString(billingType)).append("\n");
+    sb.append("    canUpgradeBillingType: ").append(toIndentedString(canUpgradeBillingType)).append("\n");
+    sb.append("    counters: ").append(toIndentedString(counters)).append("\n");
+    sb.append("    createdAt: ").append(toIndentedString(createdAt)).append("\n");
+    sb.append("    expiresAt: ").append(toIndentedString(expiresAt)).append("\n");
+    sb.append("    hasUpdates: ").append(toIndentedString(hasUpdates)).append("\n");
+    sb.append("    manager: ").append(toIndentedString(manager)).append("\n");
+    sb.append("    sortPointDistance: ").append(toIndentedString(sortPointDistance)).append("\n");
+    sb.append("    vacancyProperties: ").append(toIndentedString(vacancyProperties)).append("\n");
+    sb.append("}");
+    return sb.toString();
+  }
+
+  /**
+   * Convert the given object to string with each line indented by 4 spaces
+   * (except the first line).
+   */
+  private String toIndentedString(Object o) {
+    if (o == null) {
+      return "null";
+    }
+    return o.toString().replace("\n", "\n    ");
+  }
+}
+
